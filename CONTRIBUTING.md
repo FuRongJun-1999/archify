@@ -21,7 +21,7 @@ Start from the latest `main`. Recheck it before final review: a concurrent chang
 
 Keep one pull request focused on one behavior or one tightly related delivery slice. The PR should state:
 
-- the user problem and linked issue;
+- the user problem and linked issue, when one exists;
 - what changes and what deliberately does not;
 - compatibility and migration impact;
 - failure behavior and rollback path;
