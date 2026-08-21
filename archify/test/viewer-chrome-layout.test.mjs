@@ -117,11 +117,13 @@ async function finalGeometry(browser, sessionId) {
     var svg = container && container.querySelector(':scope > svg');
     var lens = document.getElementById('semantic-lens');
     var radar = document.getElementById('overview-map');
+    var passport = document.getElementById('focus-chip');
     var legendRect = legend && getComputedStyle(legend).display !== 'none' ? legend.getBoundingClientRect() : null;
     var navRect = nav && getComputedStyle(nav).display !== 'none' ? nav.getBoundingClientRect() : null;
     var svgRect = svg ? svg.getBoundingClientRect() : null;
     var lensRect = lens && !lens.hidden && getComputedStyle(lens).display !== 'none' ? lens.getBoundingClientRect() : null;
     var radarRect = radar && !radar.hidden && getComputedStyle(radar).display !== 'none' ? radar.getBoundingClientRect() : null;
+    var passportRect = passport && !passport.hidden && getComputedStyle(passport).display !== 'none' ? passport.getBoundingClientRect() : null;
     return {
       reserve: parseFloat(getComputedStyle(container).getPropertyValue('--archify-nav-reserve')) || 0,
       stageGap: navRect && svgRect ? navRect.top - svgRect.bottom : null,
@@ -130,8 +132,13 @@ async function finalGeometry(browser, sessionId) {
       navLensIntersectionArea: area(navRect, lensRect),
       legendRadarIntersectionArea: area(legendRect, radarRect),
       navRadarIntersectionArea: area(navRect, radarRect),
+      legendPassportIntersectionArea: area(legendRect, passportRect),
+      navPassportIntersectionArea: area(navRect, passportRect),
+      radarPassportIntersectionArea: area(radarRect, passportRect),
       legendRect: legendRect ? { left: legendRect.left, right: legendRect.right, top: legendRect.top, bottom: legendRect.bottom } : null,
       navRect: navRect ? { left: navRect.left, right: navRect.right, top: navRect.top, bottom: navRect.bottom } : null,
+      passportRect: passportRect ? { left: passportRect.left, right: passportRect.right, top: passportRect.top, bottom: passportRect.bottom } : null,
+      radarRect: radarRect ? { left: radarRect.left, right: radarRect.right, top: radarRect.top, bottom: radarRect.bottom } : null,
       hasLegend: Boolean(legendRect && legendRect.width && legendRect.height)
     };
   })()`);
@@ -416,6 +423,40 @@ test('Semantic Lens and Radar protect the final Legend and Dock rectangles', {
     receipt = await finalGeometry(browser, sessionId);
     assert.equal(receipt.legendRadarIntersectionArea, 0, JSON.stringify(receipt));
     assert.equal(receipt.navRadarIntersectionArea, 0, JSON.stringify(receipt));
+  } finally {
+    await browser.close();
+  }
+});
+
+test('Radar, Passport, Legend, and Dock remain mutually clear on desktop and narrow viewports', {
+  skip: chromePath ? false : 'Set ARCHIFY_CHROME to run the real browser regression.',
+}, async () => {
+  const browser = new ChromeVisualBrowser(chromePath);
+  try {
+    const artifact = render('architecture', CASES.architecture);
+    for (const viewport of [
+      { width: 1440, height: 900, label: 'desktop' },
+      { width: 390, height: 600, label: 'narrow' },
+    ]) {
+      const sessionId = await load(browser, artifact, viewport);
+      await evaluate(browser, sessionId, `(function () {
+        var container = document.querySelector('.diagram-container');
+        window.scrollTo(0, Math.max(0, container.offsetTop));
+        Archify.focus.set('lb', { toggle: false });
+        Archify.radar.open();
+        window.dispatchEvent(new Event('resize'));
+      })()`);
+      await waitForLayout(browser, sessionId);
+      const receipt = await finalGeometry(browser, sessionId);
+      const message = viewport.label + ': ' + JSON.stringify(receipt);
+
+      assert.equal(receipt.legendDockIntersectionArea, 0, message);
+      assert.equal(receipt.legendPassportIntersectionArea, 0, message);
+      assert.equal(receipt.navPassportIntersectionArea, 0, message);
+      assert.equal(receipt.legendRadarIntersectionArea, 0, message);
+      assert.equal(receipt.navRadarIntersectionArea, 0, message);
+      assert.equal(receipt.radarPassportIntersectionArea, 0, message);
+    }
   } finally {
     await browser.close();
   }
