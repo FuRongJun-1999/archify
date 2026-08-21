@@ -2805,6 +2805,7 @@
       .card { padding: 1rem; }
     }
     @media (min-width: 768px) and (max-height: 920px) {
+      body { padding-block: 1.25rem; }
       .header { margin-bottom: 0.875rem; }
       .cards { margin-top: 0.75rem; }
     }
@@ -4966,7 +4967,7 @@
             <path d="m7 5.4 3.6 2.6L7 10.6Z" class="sigil-fill"/>
           </g>
         <text data-detail="fine" x="45" y="140" class="t-frontend" font-size="7" font-weight="700">01</text>
-          <text data-detail-anchor x="94" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Queued</text>
+          <text data-node-label data-detail-anchor x="94" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Queued</text>
           <text data-detail="context" x="94" y="163" class="t-muted" font-size="7" text-anchor="middle">change accepted</text>
         <text data-detail="fine" x="94" y="177" class="t-frontend" font-size="7" text-anchor="middle">pending</text>
         </g>
@@ -4979,7 +4980,7 @@
             <path d="M2 8h3l1.5-3.5L9 12l1.6-4H14"/>
           </g>
         <text data-detail="fine" x="199" y="140" class="t-backend" font-size="7" font-weight="700">02</text>
-          <text data-detail-anchor x="248" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Building</text>
+          <text data-node-label data-detail-anchor x="248" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Building</text>
           <text data-detail="context" x="248" y="163" class="t-muted" font-size="7" text-anchor="middle">immutable image</text>
         <text data-detail="fine" x="248" y="177" class="t-backend" font-size="7" text-anchor="middle">running</text>
         </g>
@@ -4993,7 +4994,7 @@
             <circle cx="8" cy="8" r="1.2" class="sigil-fill"/>
           </g>
         <text data-detail="fine" x="353" y="140" class="t-security" font-size="7" font-weight="700">03</text>
-          <text data-detail-anchor x="402" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Verifying</text>
+          <text data-node-label data-detail-anchor x="402" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Verifying</text>
           <text data-detail="context" x="402" y="163" class="t-muted" font-size="7" text-anchor="middle">tests + policy</text>
         <text data-detail="fine" x="402" y="177" class="t-security" font-size="7" text-anchor="middle">gate</text>
         </g>
@@ -5006,7 +5007,7 @@
             <path d="M4 2.5h8M4 13.5h8M5 3c0 2.8 2 3.2 3 5-1 1.8-3 2.2-3 5M11 3c0 2.8-2 3.2-3 5 1 1.8 3 2.2 3 5"/>
           </g>
         <text data-detail="fine" x="507" y="140" class="t-cloud" font-size="7" font-weight="700">04</text>
-          <text data-detail-anchor x="556" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Ready</text>
+          <text data-node-label data-detail-anchor x="556" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Ready</text>
           <text data-detail="context" x="556" y="163" class="t-muted" font-size="7" text-anchor="middle">promotion pending</text>
         <text data-detail="fine" x="556" y="177" class="t-cloud" font-size="7" text-anchor="middle">approved</text>
         </g>
@@ -5020,7 +5021,7 @@
             <path d="m5.2 8 1.8 1.8 3.8-4"/>
           </g>
         <text data-detail="fine" x="661" y="140" class="t-database" font-size="7" font-weight="700">05</text>
-          <text data-detail-anchor x="710" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Live</text>
+          <text data-node-label data-detail-anchor x="710" y="147" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Live</text>
           <text data-detail="context" x="710" y="163" class="t-muted" font-size="7" text-anchor="middle">production healthy</text>
         <text data-detail="fine" x="710" y="177" class="t-database" font-size="7" text-anchor="middle">success</text>
         </g>
@@ -5032,7 +5033,7 @@
           <g aria-hidden="true" data-semantic-sigil="waiting" class="semantic-sigil s-cloud" transform="translate(448 284) scale(0.6875)">
             <path d="M4 2.5h8M4 13.5h8M5 3c0 2.8 2 3.2 3 5-1 1.8-3 2.2-3 5M11 3c0 2.8-2 3.2-3 5 1 1.8 3 2.2 3 5"/>
           </g>
-          <text data-detail-anchor x="402" y="299" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Needs Approval</text>
+          <text data-node-label data-detail-anchor x="402" y="299" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Needs Approval</text>
           <text data-detail="context" x="402" y="315" class="t-muted" font-size="7" text-anchor="middle">release owner</text>
         <text data-detail="fine" x="402" y="325" class="t-cloud" font-size="7" text-anchor="middle">pause</text>
         </g>
@@ -5044,7 +5045,7 @@
           <g aria-hidden="true" data-semantic-sigil="active" class="semantic-sigil s-backend" transform="translate(602 284) scale(0.6875)">
             <path d="M2 8h3l1.5-3.5L9 12l1.6-4H14"/>
           </g>
-          <text data-detail-anchor x="556" y="299" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Rolling Back</text>
+          <text data-node-label data-detail-anchor x="556" y="299" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Rolling Back</text>
           <text data-detail="context" x="556" y="315" class="t-muted" font-size="7" text-anchor="middle">last good image</text>
         <text data-detail="fine" x="556" y="325" class="t-backend" font-size="7" text-anchor="middle">automatic</text>
         </g>
@@ -5056,7 +5057,7 @@
           <g aria-hidden="true" data-semantic-sigil="waiting" class="semantic-sigil s-cloud" transform="translate(756 284) scale(0.6875)">
             <path d="M4 2.5h8M4 13.5h8M5 3c0 2.8 2 3.2 3 5-1 1.8-3 2.2-3 5M11 3c0 2.8-2 3.2-3 5 1 1.8 3 2.2 3 5"/>
           </g>
-          <text data-detail-anchor x="710" y="299" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Health Paused</text>
+          <text data-node-label data-detail-anchor x="710" y="299" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Health Paused</text>
           <text data-detail="context" x="710" y="315" class="t-muted" font-size="7" text-anchor="middle">SLO regression</text>
         <text data-detail="fine" x="710" y="325" class="t-cloud" font-size="7" text-anchor="middle">observe</text>
         </g>
@@ -5069,7 +5070,7 @@
             <circle cx="8" cy="8" r="5.3"/>
             <path d="m5.7 5.7 4.6 4.6m0-4.6-4.6 4.6"/>
           </g>
-          <text data-detail-anchor x="402" y="471" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Cancelled</text>
+          <text data-node-label data-detail-anchor x="402" y="471" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Cancelled</text>
           <text data-detail="context" x="402" y="487" class="t-muted" font-size="7" text-anchor="middle">approval denied</text>
         <text data-detail="fine" x="402" y="497" class="t-security" font-size="7" text-anchor="middle">terminal</text>
         </g>
@@ -5082,7 +5083,7 @@
             <circle cx="8" cy="8" r="5.3"/>
             <path d="m5.7 5.7 4.6 4.6m0-4.6-4.6 4.6"/>
           </g>
-          <text data-detail-anchor x="556" y="471" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Failed</text>
+          <text data-node-label data-detail-anchor x="556" y="471" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Failed</text>
           <text data-detail="context" x="556" y="487" class="t-muted" font-size="7" text-anchor="middle">rollback failed</text>
         <text data-detail="fine" x="556" y="497" class="t-security" font-size="7" text-anchor="middle">terminal</text>
         </g>
@@ -5095,7 +5096,7 @@
             <circle cx="8" cy="8" r="5.3"/>
             <path d="m5.2 8 1.8 1.8 3.8-4"/>
           </g>
-          <text data-detail-anchor x="710" y="471" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Rolled Back</text>
+          <text data-node-label data-detail-anchor x="710" y="471" class="t-primary" font-size="10" font-weight="600" text-anchor="middle">Rolled Back</text>
           <text data-detail="context" x="710" y="487" class="t-muted" font-size="7" text-anchor="middle">service restored</text>
         <text data-detail="fine" x="710" y="497" class="t-database" font-size="7" text-anchor="middle">terminal</text>
         </g>
@@ -10661,6 +10662,60 @@
         if (frame) return;
         frame = requestAnimationFrame(measure);
       }
+      function stableSnapshot() {
+        var shellRect = shell ? shell.getBoundingClientRect() : { width: 0, height: 0 };
+        var diagramRect = diagram ? diagram.getBoundingClientRect() : { width: 0, height: 0 };
+        return [
+          lastWidth,
+          html.getAttribute('data-reader-layout') || '',
+          html.getAttribute('data-reader-overflow') || '',
+          Math.ceil(document.documentElement.scrollWidth),
+          Math.ceil(document.documentElement.scrollHeight),
+          Math.ceil(document.body.scrollWidth),
+          Math.ceil(document.body.scrollHeight),
+          Math.round(shellRect.width * 100) / 100,
+          Math.round(shellRect.height * 100) / 100,
+          Math.round(diagramRect.width * 100) / 100,
+          Math.round(diagramRect.height * 100) / 100
+        ].join('|');
+      }
+      function whenStable() {
+        var fontsReady = document.fonts && document.fonts.ready
+          ? document.fonts.ready.catch(function () {})
+          : Promise.resolve();
+        return fontsReady.then(function () {
+          schedule();
+          return new Promise(function (resolve, reject) {
+            var previous = '';
+            var stableFrames = 0;
+            var sampledFrames = 0;
+            function sample() {
+              sampledFrames += 1;
+              if (frame || settleFrame) {
+                previous = '';
+                stableFrames = 0;
+              } else {
+                var current = stableSnapshot();
+                if (current === previous) stableFrames += 1;
+                else {
+                  previous = current;
+                  stableFrames = 0;
+                }
+                if (stableFrames >= 3) {
+                  resolve({ stable: true, snapshot: current, sampledFrames: sampledFrames });
+                  return;
+                }
+              }
+              if (sampledFrames >= 240) {
+                reject(new Error('Adaptive reader layout did not reach stable dimensions.'));
+                return;
+              }
+              requestAnimationFrame(sample);
+            }
+            requestAnimationFrame(sample);
+          });
+        });
+      }
 
       window.addEventListener('resize', schedule, { passive: true });
       window.addEventListener('load', schedule, { once: true });
@@ -10680,6 +10735,7 @@
       return {
         measure: measure,
         schedule: schedule,
+        whenStable: whenStable,
         active: function () { return html.getAttribute('data-reader-layout') === 'adaptive'; },
         receipt: function () { return { ratio: ratio, width: lastWidth }; }
       };

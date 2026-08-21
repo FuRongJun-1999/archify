@@ -45,6 +45,12 @@ jobs:
         working-directory: archify
         env:
           ARCHIFY_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+      - name: Verify the real 1440x900 adaptive reader remains readable
+        run: node --test test/desktop-reader-browser.test.mjs
+        working-directory: archify
+        env:
+          ARCHIFY_CHROME: ${{ steps.setup-chrome.outputs.chrome-path }}
+          ARCHIFY_CHROME_NO_SANDBOX: '1'
 
   zip-freshness:
     runs-on: ubuntu-latest

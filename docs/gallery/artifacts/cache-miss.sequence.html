@@ -2805,6 +2805,7 @@
       .card { padding: 1rem; }
     }
     @media (min-width: 768px) and (max-height: 920px) {
+      body { padding-block: 1.25rem; }
       .header { margin-bottom: 0.875rem; }
       .cards { margin-top: 0.75rem; }
     }
@@ -5087,7 +5088,7 @@
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-detail-anchor x="62" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">User</text>
+          <text data-node-label data-detail-anchor x="62" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">User</text>
           <text data-detail="context" x="62" y="111" class="t-muted" font-size="7" text-anchor="middle">browser session</text>
         </g>
 
@@ -5101,7 +5102,7 @@
             <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
             <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
           </g>
-          <text data-detail-anchor x="170" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Web App</text>
+          <text data-node-label data-detail-anchor x="170" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Web App</text>
           <text data-detail="context" x="170" y="111" class="t-muted" font-size="7" text-anchor="middle">React UI</text>
         </g>
 
@@ -5112,7 +5113,7 @@
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(241 78) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-detail-anchor x="278" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">API</text>
+          <text data-node-label data-detail-anchor x="278" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">API</text>
           <text data-detail="context" x="278" y="111" class="t-muted" font-size="7" text-anchor="middle">request handler</text>
         </g>
 
@@ -5124,7 +5125,7 @@
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-detail-anchor x="386" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Auth</text>
+          <text data-node-label data-detail-anchor x="386" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Auth</text>
           <text data-detail="context" x="386" y="111" class="t-muted" font-size="7" text-anchor="middle">JWT verify</text>
         </g>
 
@@ -5136,7 +5137,7 @@
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-detail-anchor x="494" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Redis</text>
+          <text data-node-label data-detail-anchor x="494" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Redis</text>
           <text data-detail="context" x="494" y="111" class="t-muted" font-size="7" text-anchor="middle">cache</text>
         </g>
 
@@ -5148,7 +5149,7 @@
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-detail-anchor x="602" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Postgres</text>
+          <text data-node-label data-detail-anchor x="602" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Postgres</text>
           <text data-detail="context" x="602" y="111" class="t-muted" font-size="7" text-anchor="middle">source of truth</text>
         </g>
 
@@ -5162,7 +5163,7 @@
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-detail-anchor x="710" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Trace</text>
+          <text data-node-label data-detail-anchor x="710" y="94" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Trace</text>
           <text data-detail="context" x="710" y="111" class="t-muted" font-size="7" text-anchor="middle">async event</text>
         </g>
 
@@ -10715,6 +10716,60 @@
         if (frame) return;
         frame = requestAnimationFrame(measure);
       }
+      function stableSnapshot() {
+        var shellRect = shell ? shell.getBoundingClientRect() : { width: 0, height: 0 };
+        var diagramRect = diagram ? diagram.getBoundingClientRect() : { width: 0, height: 0 };
+        return [
+          lastWidth,
+          html.getAttribute('data-reader-layout') || '',
+          html.getAttribute('data-reader-overflow') || '',
+          Math.ceil(document.documentElement.scrollWidth),
+          Math.ceil(document.documentElement.scrollHeight),
+          Math.ceil(document.body.scrollWidth),
+          Math.ceil(document.body.scrollHeight),
+          Math.round(shellRect.width * 100) / 100,
+          Math.round(shellRect.height * 100) / 100,
+          Math.round(diagramRect.width * 100) / 100,
+          Math.round(diagramRect.height * 100) / 100
+        ].join('|');
+      }
+      function whenStable() {
+        var fontsReady = document.fonts && document.fonts.ready
+          ? document.fonts.ready.catch(function () {})
+          : Promise.resolve();
+        return fontsReady.then(function () {
+          schedule();
+          return new Promise(function (resolve, reject) {
+            var previous = '';
+            var stableFrames = 0;
+            var sampledFrames = 0;
+            function sample() {
+              sampledFrames += 1;
+              if (frame || settleFrame) {
+                previous = '';
+                stableFrames = 0;
+              } else {
+                var current = stableSnapshot();
+                if (current === previous) stableFrames += 1;
+                else {
+                  previous = current;
+                  stableFrames = 0;
+                }
+                if (stableFrames >= 3) {
+                  resolve({ stable: true, snapshot: current, sampledFrames: sampledFrames });
+                  return;
+                }
+              }
+              if (sampledFrames >= 240) {
+                reject(new Error('Adaptive reader layout did not reach stable dimensions.'));
+                return;
+              }
+              requestAnimationFrame(sample);
+            }
+            requestAnimationFrame(sample);
+          });
+        });
+      }
 
       window.addEventListener('resize', schedule, { passive: true });
       window.addEventListener('load', schedule, { once: true });
@@ -10734,6 +10789,7 @@
       return {
         measure: measure,
         schedule: schedule,
+        whenStable: whenStable,
         active: function () { return html.getAttribute('data-reader-layout') === 'adaptive'; },
         receipt: function () { return { ratio: ratio, width: lastWidth }; }
       };
