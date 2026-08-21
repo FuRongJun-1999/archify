@@ -73,8 +73,13 @@ test('contributor and pull-request guides keep proof changes reproducible and st
     '.github/ISSUE_TEMPLATE/bug-report.yml',
     'npm test',
     'node scripts/build-gallery.mjs docs',
-    'node scripts/build-zip.sh',
+    'scripts/build-zip.sh',
     'Do not include secrets',
+    'Agent-first',
+    'diagnostics[]',
+    'Start from the latest `main`',
+    'tracked-only, symlink-safe',
+    'is **skipped**, not passed',
   ]) {
     assert.match(contributing, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), required);
   }
