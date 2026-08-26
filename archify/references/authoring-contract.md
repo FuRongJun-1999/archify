@@ -99,6 +99,7 @@ in the generated viewer.
 - Showcase route rhythm: every nonzero segment must be at least 8px; every interior segment must be at least 16px. When spread ports are nearly parallel, the router uses a 24px endpoint stub and a 16px outside bridge instead of manufacturing a tiny dogleg.
 - Shared endpoint corridors are allowed only when they remain semantically unambiguous. Unrelated collinear overlap of 8px or more fails showcase.
 - Container borders are intentional pass-through geometry, but a long edge running along a structural border is not.
+- Architecture boundaries with disjoint `wraps` memberships must keep disjoint final frames whenever a quality profile is active. Ordinary boundaries may still overlap to express orthogonal scopes only when they share real members, but two structural frames must never share a positive-length painted border segment.
 - An edge crossing an unrelated opaque node is always a hard failure, independent of quality profile.
 
 ### Spacing and labels

@@ -626,6 +626,95 @@ export function collectBorderRuns({ routedRelations, frames }) {
   return hits;
 }
 
+// Structural frames may overlap in area when they describe orthogonal scopes,
+// but borrowing the same painted border segment makes two scopes visually
+// indistinguishable. Keep this separate from relationship border runs: there
+// is no relationship identity here, and one diagnostic per frame pair is
+// enough even when identical frames share several sides.
+export function collectFrameBorderOverlaps({ frames }) {
+  const hits = [];
+  const list = asArray(frames);
+  for (let leftIndex = 0; leftIndex < list.length; leftIndex += 1) {
+    const left = list[leftIndex];
+    for (let rightIndex = leftIndex + 1; rightIndex < list.length; rightIndex += 1) {
+      const right = list[rightIndex];
+      let longest = null;
+      for (const leftBorder of frameBorderSegments(left)) {
+        for (const rightBorder of frameBorderSegments(right)) {
+          const overlap = collinearAxisOverlap(
+            leftBorder.start,
+            leftBorder.end,
+            rightBorder.start,
+            rightBorder.end,
+          );
+          if (!overlap || overlap.length <= 0.0001) continue;
+          const candidate = {
+            left,
+            right,
+            leftIndex,
+            rightIndex,
+            leftSide: leftBorder.side,
+            rightSide: rightBorder.side,
+            overlapLength: overlap.length,
+            overlapStart: overlap.start,
+            overlapEnd: overlap.end,
+          };
+          if (!longest || candidate.overlapLength > longest.overlapLength + 0.0001) {
+            longest = candidate;
+          }
+        }
+      }
+      if (longest) hits.push(longest);
+    }
+  }
+  return hits;
+}
+
+export function cleanFrameBorderOverlapProblems({
+  frames,
+  diagramType,
+  frameCollection = 'frames',
+  profile,
+  fixHint = 'adjust frame padding, membership, or enclosed node positions so each structural border has its own visible corridor',
+}) {
+  if (!process.env.ARCHIFY_QUALITY_PROFILE && !profile) return [];
+  return collectFrameBorderOverlaps({ frames }).map((hit) => {
+    const leftIdentity = hit.left?.label || hit.left?.id || hit.leftIndex;
+    const rightIdentity = hit.right?.label || hit.right?.id || hit.rightIndex;
+    const length = Math.round(hit.overlapLength * 10) / 10;
+    const from = hit.overlapStart.map((value) => Math.round(value * 10) / 10);
+    const to = hit.overlapEnd.map((value) => Math.round(value * 10) / 10);
+    const message = `[composition/frame-border-overlap] ${diagramType} ${frameCollection}[${hit.leftIndex}] "${leftIdentity}" shares its ${hit.leftSide} border with ${frameCollection}[${hit.rightIndex}] "${rightIdentity}" ${hit.rightSide} border for ${length}px at [${from.join(', ')}] -> [${to.join(', ')}] — ${fixHint}.`;
+    recordDiagnostic({
+      code: 'composition/frame-border-overlap',
+      severity: 'error',
+      message,
+      subject: {
+        diagramType,
+        collection: frameCollection,
+        index: hit.leftIndex,
+        id: hit.left?.id,
+        label: hit.left?.label,
+      },
+      evidence: {
+        otherFrame: {
+          collection: frameCollection,
+          index: hit.rightIndex,
+          id: hit.right?.id,
+          label: hit.right?.label,
+        },
+        side: hit.leftSide,
+        otherSide: hit.rightSide,
+        overlapLengthPx: length,
+        from,
+        to,
+      },
+      supportedFixes: [fixHint],
+    });
+    return message;
+  });
+}
+
 export function cleanBorderRunProblems({
   relations,
   endpointIds,

@@ -20,6 +20,8 @@ import {
   cleanAmbiguousCorridorProblems,
   collectBorderRuns,
   cleanBorderRunProblems,
+  collectFrameBorderOverlaps,
+  cleanFrameBorderOverlapProblems,
   collectRouteRhythmIssues,
   cleanRouteRhythmProblems,
   routeBudgetMetrics,
@@ -440,6 +442,40 @@ test('border-run contract merges adjacent primitives and counts any positive str
   assert.equal(hits[0].overlapLength, 38);
   assert.deepEqual(hits[0].overlapStart, [52, 40]);
   assert.deepEqual(hits[0].overlapEnd, [90, 40]);
+});
+
+test('frame-border overlap contract reports one longest shared side per frame pair', () => {
+  const frames = [
+    { id: 'private', label: 'Private scope', x: 40, y: 40, width: 240, height: 160, radius: 12 },
+    { id: 'external', label: 'External scope', x: 180, y: 40, width: 240, height: 120, radius: 8 },
+  ];
+  const hits = collectFrameBorderOverlaps({ frames });
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].leftSide, 'top');
+  assert.equal(hits[0].rightSide, 'top');
+  assert.equal(hits[0].overlapLength, 80);
+  assert.deepEqual(hits[0].overlapStart, [188, 40]);
+  assert.deepEqual(hits[0].overlapEnd, [268, 40]);
+
+  const problems = cleanFrameBorderOverlapProblems({
+    frames,
+    diagramType: 'architecture',
+    frameCollection: 'boundaries',
+    profile: 'showcase',
+  });
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /\[composition\/frame-border-overlap\]/);
+  assert.match(problems[0], /shares its top border.*for 80px/);
+});
+
+test('frame-border overlap contract allows crossings, corner touches, and parallel separated sides', () => {
+  assert.deepEqual(collectFrameBorderOverlaps({
+    frames: [
+      { x: 40, y: 40, width: 120, height: 100, radius: 10 },
+      { x: 160, y: 140, width: 120, height: 100, radius: 10 },
+      { x: 70, y: 60, width: 120, height: 100, radius: 10 },
+    ],
+  }), []);
 });
 
 test('routeBudgetMetrics normalizes collinear points and records neutral route evidence', () => {

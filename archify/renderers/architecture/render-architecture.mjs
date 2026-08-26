@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { esc, renderDefinitions, renderSemanticSigil, textUnits } from '../shared/utils.mjs';
 import { animateAttr, focusEdgeAttrs, focusNodeAttrs, focusNodeTitle, loadDiagramWithBrandMarks, writeDiagram, svgAccessibleText, svgRootAttrs } from '../shared/cli.mjs';
 import { componentBox, boundaryBox, connectionPath } from '../shared/layout-report.mjs';
-import { throwDiagnosticProblems } from '../shared/diagnostics.mjs';
+import { recordDiagnostic, throwDiagnosticProblems } from '../shared/diagnostics.mjs';
 import { legendFootprint, relationshipLegendObstacles, resolveLegend, renderLegend as renderResolvedLegend } from '../shared/legend.mjs';
 import { availableNodeTextWidth, fittedNodeFontSize, minimumNodeTextWidth } from '../shared/text-fit.mjs';
 import { brandLabelFitWidth, brandMetadataFor, brandTopRailProblem, renderBrandMark } from '../shared/brand-marks.mjs';
@@ -20,6 +20,7 @@ import {
   cleanCrossingProblems,
   cleanAmbiguousCorridorProblems,
   cleanBorderRunProblems,
+  cleanFrameBorderOverlapProblems,
   cleanRouteRhythmProblems,
   cleanLabelRouteClearanceProblems,
   suggestLabelObstacleFix,
@@ -98,6 +99,7 @@ function measureComponent(c) {
 
 const components = new Map(asArray(arch.components).map((c) => [c.id, measureComponent(c)]));
 const enforcesBoundaryTitleComposition = Boolean(arch.meta?.quality_profile);
+const requiresNestedBoundaryMembership = arch.meta?.engineering_profile === 'deployment-ownership';
 const componentSteps = new Map();
 for (const [index, conn] of asArray(arch.connections).entries()) {
   if (!componentSteps.has(conn.from)) componentSteps.set(conn.from, index);
@@ -276,7 +278,81 @@ function layoutBoundaryTitles(rawBoundaries, minimumFontSize) {
   });
 }
 
-const rawBoundaries = asArray(arch.boundaries).map(boundaryRect).filter(Boolean);
+function strictMembershipSubset(child, parent) {
+  const childMembers = new Set(asArray(child.wraps));
+  const parentMembers = new Set(asArray(parent.wraps));
+  return childMembers.size < parentMembers.size
+    && [...childMembers].every((id) => parentMembers.has(id));
+}
+
+function deploymentEqualMembershipParent(left, right) {
+  if (!requiresNestedBoundaryMembership) return null;
+  const leftMembers = new Set(asArray(left.wraps));
+  const rightMembers = new Set(asArray(right.wraps));
+  const equal = leftMembers.size === rightMembers.size
+    && [...leftMembers].every((id) => rightMembers.has(id));
+  if (!equal || left.kind === right.kind) return null;
+  if (left.kind === 'region' && right.kind === 'security-group') return 'left';
+  if (right.kind === 'region' && left.kind === 'security-group') return 'right';
+  return null;
+}
+
+function nestedBoundaryPair(left, right) {
+  if (strictMembershipSubset(left, right)) return { child: left, parent: right };
+  if (strictMembershipSubset(right, left)) return { child: right, parent: left };
+  const equalParent = deploymentEqualMembershipParent(left, right);
+  if (equalParent === 'left') return { child: right, parent: left };
+  if (equalParent === 'right') return { child: left, parent: right };
+  return null;
+}
+
+function separateNestedBoundaryBorders(inputBoundaries) {
+  if (!enforcesBoundaryTitleComposition || inputBoundaries.length < 2) return inputBoundaries;
+  const clearance = 8;
+  const boundaries = inputBoundaries.map((boundary) => ({ ...boundary }));
+  const pairs = [];
+  for (let leftIndex = 0; leftIndex < boundaries.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < boundaries.length; rightIndex += 1) {
+      const nested = nestedBoundaryPair(boundaries[leftIndex], boundaries[rightIndex]);
+      // Preserve the existing fail-closed contract for authored containment
+      // errors. Only pairs whose raw frames already agree with membership are
+      // eligible for automatic breathing room.
+      if (!nested || !rectContains(nested.parent, nested.child)) continue;
+      pairs.push({
+        childIndex: nested.child === boundaries[leftIndex] ? leftIndex : rightIndex,
+        parentIndex: nested.parent === boundaries[leftIndex] ? leftIndex : rightIndex,
+      });
+    }
+  }
+
+  for (let iteration = 0; iteration < boundaries.length; iteration += 1) {
+    let changed = false;
+    for (const { childIndex, parentIndex } of pairs) {
+      const child = boundaries[childIndex];
+      const parent = boundaries[parentIndex];
+      const right = Math.max(parent.x + parent.width, child.x + child.width + clearance);
+      const bottom = Math.max(parent.y + parent.height, child.y + child.height + clearance);
+      const x = Math.min(parent.x, child.x - clearance);
+      const y = Math.min(parent.y, child.y - clearance);
+      if (x === parent.x && y === parent.y
+        && right === parent.x + parent.width && bottom === parent.y + parent.height) continue;
+      boundaries[parentIndex] = {
+        ...parent,
+        x,
+        y,
+        width: right - x,
+        height: bottom - y,
+      };
+      changed = true;
+    }
+    if (!changed) break;
+  }
+  return boundaries;
+}
+
+const rawBoundaries = separateNestedBoundaryBorders(
+  asArray(arch.boundaries).map(boundaryRect).filter(Boolean),
+);
 function resolveBoundaryTitles() {
   if (!enforcesBoundaryTitleComposition || rawBoundaries.length === 0) {
     return {
@@ -339,7 +415,6 @@ function validateArchitecture() {
   if (resolvedBoundaryTitles.readabilityProblem) {
     problems.push(resolvedBoundaryTitles.readabilityProblem);
   }
-  const requiresNestedBoundaryMembership = arch.meta?.engineering_profile === 'deployment-ownership';
   if (arch.schema_version !== 1) problems.push('Architecture files must set "schema_version": 1.');
   if (arch.diagram_type !== 'architecture') problems.push('Architecture files must set "diagram_type": "architecture".');
   if (!arch.meta?.title) problems.push('Architecture files must include meta.title.');
@@ -446,14 +521,48 @@ function validateArchitecture() {
           `Boundary labels "${left.label}" and "${right.label}" overlap — shorten a label or increase boundary title space.`,
         );
       }
-      // Ordinary architecture boundaries are sets, not an implied ownership
-      // tree: orthogonal scopes such as runtime and compliance may share some
-      // components while each contains others. The opt-in deployment profile
-      // does promise hierarchical region/private-scope membership, so only it
-      // receives the stricter membership-to-frame containment contract.
-      if (!requiresNestedBoundaryMembership) continue;
       const rightMembers = new Set(asArray(right.wraps));
       const shared = [...leftMembers].filter((id) => rightMembers.has(id));
+      const framesOverlap = rectsOverlap(left, right);
+      // Ordinary architecture boundaries are sets, not an implied ownership
+      // tree: orthogonal scopes such as runtime and compliance may share some
+      // components while each contains others. Disjoint memberships do not
+      // express that relationship, so quality-profile diagrams must keep their
+      // frames disjoint. The opt-in deployment profile additionally promises a
+      // hierarchical region/private-scope membership contract.
+      if (!requiresNestedBoundaryMembership) {
+        if (enforcesBoundaryTitleComposition && !shared.length && framesOverlap) {
+          const message = `Boundary "${left.label}" and boundary "${right.label}" final frames overlap even though their memberships are disjoint — `
+            + 'adjust pad or component positions so the frames are disjoint, or make wraps express the intended shared scope.';
+          recordDiagnostic({
+            code: 'composition/disjoint-boundary-overlap',
+            severity: 'error',
+            message,
+            subject: {
+              diagramType: 'architecture',
+              collection: 'boundaries',
+              index: leftIndex,
+              label: left.label,
+            },
+            evidence: {
+              otherBoundary: {
+                collection: 'boundaries',
+                index: rightIndex,
+                label: right.label,
+              },
+              sharedMembers: [],
+              leftMembers: [...leftMembers],
+              rightMembers: [...rightMembers],
+            },
+            supportedFixes: [
+              'reduce boundary pad or move wrapped components until the frames are disjoint',
+              'add the real shared component ids to both wraps lists when the boundaries intentionally describe orthogonal scopes',
+            ],
+          });
+          problems.push(message);
+        }
+        continue;
+      }
       const leftNested = [...leftMembers].every((id) => rightMembers.has(id));
       const rightNested = [...rightMembers].every((id) => leftMembers.has(id));
       if (shared.length && !leftNested && !rightNested) {
@@ -469,7 +578,7 @@ function validateArchitecture() {
         continue;
       }
 
-      if (!rectsOverlap(left, right)) continue;
+      if (!framesOverlap) continue;
       const leftContainsRight = rectContains(left, right);
       const rightContainsLeft = rectContains(right, left);
       if (!leftContainsRight && !rightContainsLeft) {
@@ -498,6 +607,13 @@ function validateArchitecture() {
       }
     }
   }
+  problems.push(...cleanFrameBorderOverlapProblems({
+    frames: compositionFrames,
+    diagramType: 'architecture',
+    frameCollection: 'boundaries',
+    profile: arch.meta?.quality_profile,
+    fixHint: 'adjust boundary pad, wraps membership, or component positions so the boundary frames do not share a painted border segment',
+  }));
   for (const b of boundaries) {
     if (b.x < 0 || b.y < 0 || b.x + b.width > viewBox[0] || b.y + b.height > viewBox[1]) {
       problems.push(`Boundary "${b.label}" extends outside the viewBox — its members sit too close to the canvas edge; add margin or enlarge meta.viewBox.`);

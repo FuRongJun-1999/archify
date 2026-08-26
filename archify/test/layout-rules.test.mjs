@@ -343,6 +343,88 @@ test('architecture: ordinary boundaries may express orthogonal overlapping membe
   assert.equal(rectanglesOverlap(masks[0], masks[1]), false);
 });
 
+test('architecture: quality profiles reject overlapping boundaries with disjoint memberships', () => {
+  const d = {
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: {
+      title: 'Disjoint boundary overlap',
+      quality_profile: 'showcase',
+      viewBox: [800, 520],
+    },
+    components: [
+      { id: 'left', type: 'backend', label: 'Left', pos: [120, 240], size: [180, 72] },
+      { id: 'right', type: 'external', label: 'Right', pos: [360, 140], size: [180, 72] },
+    ],
+    boundaries: [
+      { kind: 'region', label: 'Private boundary', wraps: ['left'], pad: 80 },
+      { kind: 'security-group', label: 'External boundary', wraps: ['right'], pad: 80 },
+    ],
+    connections: [],
+    cards: [],
+  };
+
+  const { code, result } = validateCli('architecture', d);
+  assert.notEqual(code, 0);
+  const diagnostic = result.diagnostics.find((entry) => entry.code === 'composition/disjoint-boundary-overlap');
+  assert.ok(diagnostic, JSON.stringify(result, null, 2));
+  assert.deepEqual(diagnostic.evidence.sharedMembers, []);
+  assert.equal(diagnostic.evidence.otherBoundary.label, 'External boundary');
+  assert.match(diagnostic.supportedFixes.join('\n'), /frames are disjoint/);
+});
+
+test('architecture: quality profiles reject shared painted borders between orthogonal scopes', () => {
+  const d = {
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: {
+      title: 'Shared boundary border',
+      quality_profile: 'showcase',
+      viewBox: [980, 560],
+    },
+    components: [
+      { id: 'left', type: 'backend', label: 'Left', pos: [120, 240], size: [160, 72] },
+      { id: 'shared', type: 'backend', label: 'Shared', pos: [360, 240], size: [160, 72] },
+      { id: 'right', type: 'external', label: 'Right', pos: [600, 240], size: [160, 72] },
+    ],
+    boundaries: [
+      { kind: 'region', label: 'Left scope', wraps: ['left', 'shared'], pad: 40 },
+      { kind: 'security-group', label: 'Right scope', wraps: ['shared', 'right'], pad: 40 },
+    ],
+    connections: [],
+    cards: [],
+  };
+
+  const { code, result } = validateCli('architecture', d);
+  assert.notEqual(code, 0);
+  const diagnostic = result.diagnostics.find((entry) => entry.code === 'composition/frame-border-overlap');
+  assert.ok(diagnostic, JSON.stringify(result, null, 2));
+  assert.equal(diagnostic.evidence.side, 'top');
+  assert.equal(diagnostic.evidence.otherSide, 'top');
+  assert.ok(diagnostic.evidence.overlapLengthPx > 0);
+  assert.match(diagnostic.supportedFixes.join('\n'), /do not share a painted border segment/);
+});
+
+test('architecture: profile-less v1 preserves legacy disjoint boundary overlap', () => {
+  const d = {
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: { title: 'Legacy disjoint overlap', viewBox: [800, 520] },
+    components: [
+      { id: 'left', type: 'backend', label: 'Left', pos: [120, 240], size: [180, 72] },
+      { id: 'right', type: 'external', label: 'Right', pos: [360, 140], size: [180, 72] },
+    ],
+    boundaries: [
+      { kind: 'region', label: 'Private boundary', wraps: ['left'], pad: 80 },
+      { kind: 'security-group', label: 'External boundary', wraps: ['right'], pad: 80 },
+    ],
+    connections: [],
+    cards: [],
+  };
+  const { code, stderr } = render('architecture', d);
+  assert.equal(code, 0, stderr);
+});
+
 test('architecture: profile-less v1 keeps rendering when a boundary title cannot meet strict composition', () => {
   const d = load('architecture');
   delete d.meta.quality_profile;
