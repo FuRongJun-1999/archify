@@ -8,6 +8,13 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
+const canonicalZipNodeMajor = 22;
+const currentNodeMajor = Number(process.versions.node.split('.')[0]);
+const canonicalZipTest = (name, fn) => test(name, {
+  skip: currentNodeMajor === canonicalZipNodeMajor
+    ? false
+    : `canonical ZIP builds require Node ${canonicalZipNodeMajor}`,
+}, fn);
 
 function workflowStep(workflow, name) {
   const marker = `      - name: ${name}`;
@@ -100,7 +107,7 @@ test('package smoke rejects every dependency or repository-only artifact', () =>
   }
 });
 
-test('package smoke rejects every dependency metadata field in a built package', () => {
+canonicalZipTest('package smoke rejects every dependency metadata field in a built package', () => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-built-package-gate-'));
   try {
     const archive = path.join(fixture, 'archify.zip');
@@ -143,7 +150,7 @@ test('package smoke rejects every dependency metadata field in a built package',
   }
 });
 
-test('archive build excludes untracked files and external symlinks from the live working tree', () => {
+canonicalZipTest('archive build excludes untracked files and external symlinks from the live working tree', () => {
   const marker = `.package-negative-${process.pid}-${Date.now()}`;
   const untracked = path.join(repoRoot, 'archify', `${marker}.txt`);
   const externalRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-package-external-'));
@@ -174,7 +181,7 @@ test('archive build excludes untracked files and external symlinks from the live
   }
 });
 
-test('archive build rejects an unmerged index and preserves an existing archive', () => {
+canonicalZipTest('archive build rejects an unmerged index and preserves an existing archive', () => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-package-unmerged-'));
   const scripts = path.join(fixture, 'scripts');
   const skill = path.join(fixture, 'archify');
@@ -221,13 +228,35 @@ test('archive build rejects an unmerged index and preserves an existing archive'
     });
     assert.notEqual(build.status, 0, `${build.stdout}\n${build.stderr}`);
     assert.match(build.stderr, /refusing to package unmerged index entry/);
-    assert.deepEqual(fs.readFileSync(archive), trusted, 'a failed build must preserve the trusted archive');
+    assert.ok(fs.readFileSync(archive).equals(trusted), 'a failed build must preserve the trusted archive');
   } finally {
     fs.rmSync(fixture, { recursive: true, force: true });
   }
 });
 
-test('archive build is byte-for-byte reproducible across caller time zones without system zip', () => {
+test('archive build rejects non-canonical Node versions before publishing output', {
+  skip: currentNodeMajor === canonicalZipNodeMajor
+    ? `requires a Node major other than ${canonicalZipNodeMajor}`
+    : false,
+}, () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-package-node-version-'));
+  try {
+    const archive = path.join(outputRoot, 'archify.zip');
+    const trusted = Buffer.from('existing canonical archive');
+    fs.writeFileSync(archive, trusted);
+    const build = spawnSync(path.join(repoRoot, 'scripts', 'build-zip.sh'), [archive], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+    assert.notEqual(build.status, 0, `${build.stdout}\n${build.stderr}`);
+    assert.match(build.stderr, /canonical archify\.zip builds require Node 22/);
+    assert.ok(fs.readFileSync(archive).equals(trusted), 'version rejection must preserve the canonical archive');
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+});
+
+canonicalZipTest('archive build is byte-for-byte reproducible across caller time zones without system zip', () => {
   const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-package-reproducible-'));
   const utcArchive = path.join(outputRoot, 'utc.zip');
   const honoluluArchive = path.join(outputRoot, 'honolulu.zip');
@@ -245,14 +274,12 @@ test('archive build is byte-for-byte reproducible across caller time zones witho
       assert.equal(build.status, 0, `${build.stdout}\n${build.stderr}`);
     }
 
-    assert.deepEqual(
-      fs.readFileSync(utcArchive),
-      fs.readFileSync(honoluluArchive),
+    assert.ok(
+      fs.readFileSync(utcArchive).equals(fs.readFileSync(honoluluArchive)),
       'identical tracked inputs must produce identical archive bytes',
     );
-    assert.deepEqual(
-      fs.readFileSync(utcArchive),
-      fs.readFileSync(path.join(repoRoot, 'archify.zip')),
+    assert.ok(
+      fs.readFileSync(utcArchive).equals(fs.readFileSync(path.join(repoRoot, 'archify.zip'))),
       'the canonical archive toolchain must reproduce the committed archive bytes',
     );
     assert.deepEqual(

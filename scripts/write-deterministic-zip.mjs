@@ -93,7 +93,7 @@ const localParts = [];
 const centralParts = [];
 let offset = 0;
 const files = sortedEntries(root);
-requireZip32(files.length <= ZIP32_MAX_ENTRIES, `entry count ${files.length} exceeds ${ZIP32_MAX_ENTRIES}`);
+requireZip32(files.length < ZIP32_MAX_ENTRIES, `entry count ${files.length} reaches ZIP64 sentinel ${ZIP32_MAX_ENTRIES}`);
 
 for (const file of files) {
   const name = Buffer.from(`${path.basename(root)}/${file.relative}`, 'utf8');
@@ -104,9 +104,9 @@ for (const file of files) {
     strategy: zlibConstants.Z_FIXED,
   });
   requireZip32(name.length <= ZIP32_MAX_NAME_BYTES, `file name is too long: ${file.relative}`);
-  requireZip32(content.length <= ZIP32_MAX_VALUE, `file is too large: ${file.relative}`);
-  requireZip32(compressed.length <= ZIP32_MAX_VALUE, `compressed file is too large: ${file.relative}`);
-  requireZip32(offset <= ZIP32_MAX_VALUE, `local header offset is too large: ${file.relative}`);
+  requireZip32(content.length < ZIP32_MAX_VALUE, `file reaches the ZIP64 size sentinel: ${file.relative}`);
+  requireZip32(compressed.length < ZIP32_MAX_VALUE, `compressed file reaches the ZIP64 size sentinel: ${file.relative}`);
+  requireZip32(offset < ZIP32_MAX_VALUE, `local header offset reaches the ZIP64 sentinel: ${file.relative}`);
   const checksum = crc32(content);
   const mode = fs.statSync(file.absolute).mode & 0o111 ? 0o755 : 0o644;
   const local = localHeader({
@@ -133,8 +133,8 @@ for (const file of files) {
 const centralOffset = offset;
 const centralSize = centralParts.reduce((total, part) => total + part.length, 0);
 const entryCount = files.length;
-requireZip32(centralOffset <= ZIP32_MAX_VALUE, `central directory offset ${centralOffset} is too large`);
-requireZip32(centralSize <= ZIP32_MAX_VALUE, `central directory size ${centralSize} is too large`);
+requireZip32(centralOffset < ZIP32_MAX_VALUE, `central directory offset ${centralOffset} reaches the ZIP64 sentinel`);
+requireZip32(centralSize < ZIP32_MAX_VALUE, `central directory size ${centralSize} reaches the ZIP64 sentinel`);
 
 const end = Buffer.alloc(22);
 end.writeUInt32LE(0x06054b50, 0);

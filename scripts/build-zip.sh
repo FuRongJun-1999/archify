@@ -9,6 +9,18 @@ if [[ "$out" != /* ]]; then
   out="$(pwd)/$out"
 fi
 
+# Runtime consumers support every Node version declared by archify/package.json,
+# but canonical ZIP bytes depend on the Node/zlib toolchain. CI and releases use
+# Node 22, so fail clearly instead of publishing different bytes from another
+# Node major.
+canonical_node_major=22
+node_version="$(node -p 'process.versions.node')"
+node_major="${node_version%%.*}"
+if [[ "$node_major" != "$canonical_node_major" ]]; then
+  echo "canonical archify.zip builds require Node $canonical_node_major (current: $node_version)" >&2
+  exit 1
+fi
+
 # Stage only files tracked by Git. Paths and modes come from the index, while
 # bytes intentionally come from the working tree so contributors can package
 # tracked edits before committing them. A conflicted index is never publishable.
