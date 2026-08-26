@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { extractInlineSvgs, parseXml } from './helpers/xml.mjs';
+import { extractSvgs, parseXml } from './helpers/xml.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
@@ -403,9 +403,12 @@ test('cli: deliver works from an installed skill without node_modules', () => {
     assert.equal(result.status, 0, `${label}: ${result.stderr}`);
     assert.equal(JSON.parse(result.stdout).validation.checkCount, 9, label);
     assert.equal(fs.existsSync(out), true, label);
-    const [svg = ''] = extractInlineSvgs(fs.readFileSync(out, 'utf8'));
-    assert.notEqual(svg, '', `${label}: expected one delivered SVG`);
-    assert.doesNotThrow(() => parseXml(svg), `${label}: delivered SVG must be well-formed XML`);
+    const extracted = extractSvgs(fs.readFileSync(out, 'utf8'));
+    assert.equal(extracted.direct.length, 1, `${label}: expected one delivered SVG`);
+    assert.doesNotThrow(
+      () => parseXml(extracted.direct[0]),
+      `${label}: delivered SVG must be well-formed XML`,
+    );
   }
 });
 
