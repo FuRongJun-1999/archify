@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { verifyRepositoryEvidence } from '../renderers/shared/repository-evidence.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
@@ -15,15 +16,8 @@ const shareCardPath = path.join(repoRoot, 'docs', 'assets', 'mco-runtime-share-c
 const experimentSourcePath = path.join(repoRoot, 'experiments', 'mco-showcase', 'mco-runtime.architecture.json');
 const experimentArtifactPath = path.join(repoRoot, 'experiments', 'mco-showcase', 'mco-runtime.html');
 const cli = path.join(skillRoot, 'bin', 'archify.mjs');
-const pinnedRepository = JSON.parse(fs.readFileSync(sourcePath, 'utf8')).meta.repository;
-
-function canonicalRepositoryUrl(value) {
-  return value.trim()
-    .replace(/^git@github\.com:/i, 'https://github.com/')
-    .replace(/\.git\/?$/i, '')
-    .replace(/\/$/, '')
-    .toLowerCase();
-}
+const pinnedSource = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
+const pinnedRepository = pinnedSource.meta.repository;
 
 function evidencePayload(html) {
   const match = html.match(/<script id="archify-source-evidence-data" type="application\/json">([\s\S]*?)<\/script>/);
@@ -37,22 +31,20 @@ function connectionLabelGeometry(html) {
   )].map((match) => [match[1], { x: Number(match[2]), y: Number(match[3]) }]));
 }
 
-function localMcoRoot() {
-  const candidates = [
-    process.env.ARCHIFY_MCO_REPO_ROOT,
-    path.resolve(repoRoot, '..', 'mco'),
-  ].filter(Boolean);
-  return candidates.find(candidate => {
-    if (!fs.existsSync(path.join(candidate, '.git'))) return false;
-    const revision = spawnSync('git', ['-C', candidate, 'cat-file', '-e', `${pinnedRepository.revision}^{commit}`]);
-    if (revision.status !== 0) return false;
-    const origin = spawnSync('git', ['-C', candidate, 'remote', 'get-url', 'origin'], { encoding: 'utf8' });
-    return origin.status === 0
-      && canonicalRepositoryUrl(origin.stdout) === canonicalRepositoryUrl(pinnedRepository.url);
-  }) || null;
+function automaticMcoRoot() {
+  const candidate = path.resolve(repoRoot, '..', 'mco');
+  if (!fs.existsSync(path.join(candidate, '.git'))) return null;
+  try {
+    verifyRepositoryEvidence('architecture', pinnedSource, candidate);
+    return candidate;
+  } catch {
+    return null;
+  }
 }
 
-const pinnedMcoRoot = localMcoRoot();
+const pinnedMcoRoot = process.env.ARCHIFY_MCO_REPO_ROOT
+  ? path.resolve(process.env.ARCHIFY_MCO_REPO_ROOT)
+  : automaticMcoRoot();
 
 test('MCO showcase preserves checked-in connection-label geometry', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-mco-showcase-layout-'));
@@ -146,7 +138,7 @@ test('checked-in MCO artifacts are byte-reproducible from the pinned repository 
   }
 });
 
-test('MCO proof is source-backed, reproducible, and linked from every README', () => {
+test('MCO public proof is source-backed, valid, and linked from every README', () => {
   const source = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
   assert.equal(source.meta.title, 'MCO Runtime Architecture');
   assert.equal(source.meta.quality_profile, 'showcase');
@@ -171,25 +163,32 @@ test('MCO proof is source-backed, reproducible, and linked from every README', (
   const checkedInHtml = fs.readFileSync(artifactPath, 'utf8');
   const evidence = evidencePayload(checkedInHtml);
   assert.equal(evidence.verified, true);
+  assert.equal(evidence.repository.url, source.meta.repository.url);
   assert.equal(evidence.repository.revision, source.meta.repository.revision);
+  assert.equal(evidence.repository.shortRevision, source.meta.repository.revision.slice(0, 7));
   assert.equal(evidence.referenceCount, references);
   assert.match(checkedInHtml, /Archify\.sourceEvidence\.installBeacons\(\)/);
   execFileSync(process.execPath, [cli, 'check', artifactPath], { encoding: 'utf8' });
 
-  const output = path.join(os.tmpdir(), `archify-mco-proof-no-root-${process.pid}.html`);
-  const result = spawnSync(process.execPath, [
-    cli,
-    'deliver',
-    'architecture',
-    sourcePath,
-    output,
-    '--quality',
-    'showcase',
-    '--json',
-  ], { encoding: 'utf8' });
-  assert.equal(result.status, 1);
-  assert.match(JSON.parse(result.stdout).error, /Pass --repo-root/);
-  assert.equal(fs.existsSync(output), false);
+  const noRootTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-mco-proof-no-root-'));
+  try {
+    const output = path.join(noRootTmp, 'mco-runtime.html');
+    const result = spawnSync(process.execPath, [
+      cli,
+      'deliver',
+      'architecture',
+      sourcePath,
+      output,
+      '--quality',
+      'showcase',
+      '--json',
+    ], { encoding: 'utf8' });
+    assert.equal(result.status, 1);
+    assert.match(JSON.parse(result.stdout).error, /Pass --repo-root/);
+    assert.equal(fs.existsSync(output), false);
+  } finally {
+    fs.rmSync(noRootTmp, { recursive: true, force: true });
+  }
 
   const png = fs.readFileSync(shareCardPath);
   assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
@@ -197,10 +196,14 @@ test('MCO proof is source-backed, reproducible, and linked from every README', (
   assert.equal(png.readUInt32BE(20), 630);
   assert.ok(png.byteLength > 20_000, 'MCO Share Card is unexpectedly small');
 
+  const repositorySlug = new URL(source.meta.repository.url).pathname.replace(/^\/|\/$/g, '');
+  const shortRevision = source.meta.repository.revision.slice(0, 7);
   for (const filename of ['README.md', 'README_EN.md', 'README_ZH.md']) {
     const readme = fs.readFileSync(path.join(repoRoot, filename), 'utf8');
     assert.match(readme, /docs\/assets\/mco-runtime-share-card\.png/);
     assert.match(readme, /cases\/mco-runtime\.architecture\.html\?theme=dark&present=1#view=dispatch-path/);
     assert.match(readme, /docs\/cases\/mco-runtime\.architecture\.json/);
+    assert.ok(readme.includes(`[\`${repositorySlug}\`](${source.meta.repository.url})`), `${filename}: repository link drifted`);
+    assert.ok(readme.includes(`\`${shortRevision}\``), `${filename}: repository revision drifted`);
   }
 });
