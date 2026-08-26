@@ -80,3 +80,14 @@ test('distribution acceptance reserves stdout for its machine-readable JSON rece
   assert.doesNotMatch(source, /stdio:\s*['"]inherit['"]/);
   assert.equal([...source.matchAll(/process\.stdout\.write/g)].length, 2);
 });
+
+test('distribution receipt separates canonical ZIP bytes from cross-platform content checks', () => {
+  const source = fs.readFileSync(
+    path.join(integrationRoot, 'scripts', 'distribution-acceptance.mjs'),
+    'utf8',
+  );
+  assert.match(source, /canonicalZipBytes/);
+  assert.match(source, /crossPlatformZipCheck:\s*'extracted-content'/);
+  assert.doesNotMatch(source, /zipContainerBytesReproducible/);
+  assert.doesNotMatch(source, /rsync\/zip are not on GitHub Windows runners/);
+});

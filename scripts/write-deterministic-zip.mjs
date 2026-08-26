@@ -2,6 +2,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { constants as zlibConstants, deflateRawSync } from 'node:zlib';
 
 const [rootArg, outputArg] = process.argv.slice(2);
@@ -16,6 +17,13 @@ const UTF8_FLAG = 0x0800;
 const DEFLATE_METHOD = 8;
 const DOS_TIME = 0;
 const DOS_DATE = 0x0021; // 1980-01-01, the earliest ZIP timestamp.
+const ZIP32_MAX_ENTRIES = 0xffff;
+const ZIP32_MAX_NAME_BYTES = 0xffff;
+const ZIP32_MAX_VALUE = 0xffffffff;
+
+function requireZip32(condition, detail) {
+  if (!condition) throw new Error(`ZIP64 is not supported: ${detail}`);
+}
 
 function crc32(buffer) {
   let crc = 0xffffffff;
@@ -84,8 +92,10 @@ function centralHeader({ name, crc, compressedSize, uncompressedSize, offset, mo
 const localParts = [];
 const centralParts = [];
 let offset = 0;
+const files = sortedEntries(root);
+requireZip32(files.length <= ZIP32_MAX_ENTRIES, `entry count ${files.length} exceeds ${ZIP32_MAX_ENTRIES}`);
 
-for (const file of sortedEntries(root)) {
+for (const file of files) {
   const name = Buffer.from(`${path.basename(root)}/${file.relative}`, 'utf8');
   const content = fs.readFileSync(file.absolute);
   const compressed = deflateRawSync(content, {
@@ -93,6 +103,10 @@ for (const file of sortedEntries(root)) {
     memLevel: 9,
     strategy: zlibConstants.Z_FIXED,
   });
+  requireZip32(name.length <= ZIP32_MAX_NAME_BYTES, `file name is too long: ${file.relative}`);
+  requireZip32(content.length <= ZIP32_MAX_VALUE, `file is too large: ${file.relative}`);
+  requireZip32(compressed.length <= ZIP32_MAX_VALUE, `compressed file is too large: ${file.relative}`);
+  requireZip32(offset <= ZIP32_MAX_VALUE, `local header offset is too large: ${file.relative}`);
   const checksum = crc32(content);
   const mode = fs.statSync(file.absolute).mode & 0o111 ? 0o755 : 0o644;
   const local = localHeader({
@@ -118,10 +132,9 @@ for (const file of sortedEntries(root)) {
 
 const centralOffset = offset;
 const centralSize = centralParts.reduce((total, part) => total + part.length, 0);
-const entryCount = centralParts.length / 2;
-if (entryCount > 0xffff || centralOffset > 0xffffffff || centralSize > 0xffffffff) {
-  throw new Error('ZIP64 is not supported by the deterministic package writer');
-}
+const entryCount = files.length;
+requireZip32(centralOffset <= ZIP32_MAX_VALUE, `central directory offset ${centralOffset} is too large`);
+requireZip32(centralSize <= ZIP32_MAX_VALUE, `central directory size ${centralSize} is too large`);
 
 const end = Buffer.alloc(22);
 end.writeUInt32LE(0x06054b50, 0);
@@ -133,5 +146,21 @@ end.writeUInt32LE(centralSize, 12);
 end.writeUInt32LE(centralOffset, 16);
 end.writeUInt16LE(0, 20);
 
-fs.writeFileSync(output, Buffer.concat([...localParts, ...centralParts, end]));
+const archive = Buffer.concat([...localParts, ...centralParts, end]);
+const temporary = path.join(
+  path.dirname(output),
+  `.${path.basename(output)}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`,
+);
+let descriptor;
+try {
+  descriptor = fs.openSync(temporary, 'wx', 0o666);
+  fs.writeFileSync(descriptor, archive);
+  fs.fsyncSync(descriptor);
+  fs.closeSync(descriptor);
+  descriptor = undefined;
+  fs.renameSync(temporary, output);
+} finally {
+  if (descriptor !== undefined) fs.closeSync(descriptor);
+  fs.rmSync(temporary, { force: true });
+}
 console.log(`built ${output} (${entryCount} files)`);

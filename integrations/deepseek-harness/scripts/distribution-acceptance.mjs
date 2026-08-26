@@ -22,7 +22,7 @@ const receipt = {
   dsh: { spec: DSH_SPEC },
   node: process.version,
   platform: process.platform,
-  zipContainerNote: 'Fresh builder ZIP vs committed ZIP: unzip contents match; ZIP container bytes do not. Existing baseline behavior, not a DSH regression.',
+  zipContainerNote: 'Canonical Linux CI verifies ZIP container bytes; cross-platform DSH acceptance verifies extracted package content.',
   stages: [],
 };
 
@@ -413,8 +413,9 @@ const skipFreshZipRebuild = process.platform === 'win32';
 const committedZip = path.join(repoRoot, 'archify.zip');
 const packedSkill = path.join(inspectRoot, 'package', 'skills', 'archify');
 let unzipContentsIdentical = false;
+let canonicalZipBytes = 'not-asserted';
 if (skipFreshZipRebuild) {
-  receipt.zipContainerNote = 'Fresh ZIP rebuild skipped on Windows (rsync/zip are not on GitHub Windows runners). Used committed archify.zip for content comparison; known text files normalize checkout CRLF while all other files remain byte-exact. ZIP container bytes are already known non-reproducible.';
+  receipt.zipContainerNote = 'Windows validates committed ZIP contents with checkout text EOL normalization; canonical container-byte reproduction is owned by Linux CI.';
   const checkedDir = path.join(scratch, 'checked');
   fs.mkdirSync(checkedDir);
   fs.copyFileSync(committedZip, path.join(checkedDir, 'committed.zip'));
@@ -437,6 +438,12 @@ if (skipFreshZipRebuild) {
   if (unzipDiff.status !== 0) {
     fail('zero-regression', 'fresh ZIP contents drifted from the committed ZIP', { diff: unzipDiff.stdout });
   }
+  if (process.platform === 'linux') {
+    if (!fs.readFileSync(freshZip).equals(fs.readFileSync(committedZip))) {
+      fail('zero-regression', 'canonical Linux ZIP bytes drifted from the committed archive');
+    }
+    canonicalZipBytes = 'verified';
+  }
   unzipContentsIdentical = true;
 }
 const skillsList = run('npx', ['-y', 'skills', 'add', repoRoot, '--list', '--full-depth'], { cwd: repoRoot, timeout: 120_000 });
@@ -445,7 +452,8 @@ pass('zero-regression', {
   archifyZipBlob: zipBlob.stdout.trim(),
   archifyPackageBlob: pkgBlob.stdout.trim(),
   unzipContentsIdentical,
-  zipContainerBytesReproducible: false,
+  canonicalZipBytes,
+  crossPlatformZipCheck: 'extracted-content',
   ...(skipFreshZipRebuild ? { freshZipRebuildSkipped: true, checkoutTextEolNormalized: true } : {}),
   skillsCli: skillsList.stdout.trim().slice(0, 500),
 });

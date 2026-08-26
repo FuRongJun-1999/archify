@@ -35,16 +35,15 @@ test('release smokes the exact archive built for the release before freshness an
 
   assert.ok(workflow.indexOf(tagGate) < workflow.indexOf(build), 'tag/version gate must precede the release build');
   assert.ok(workflow.indexOf(build) < workflow.indexOf(smoke), 'release smoke must follow the archive build');
-  assert.ok(workflow.indexOf(smoke) < workflow.indexOf(freshness), 'release smoke must inspect the built archive before it is restored');
+  assert.ok(workflow.indexOf(smoke) < workflow.indexOf(freshness), 'release smoke must inspect the built archive before comparison');
   assert.ok(workflow.indexOf(freshness) < workflow.indexOf(upload), 'freshness must pass before release upload');
 
   assert.match(tagGate, /require\('\.\/archify\/package\.json'\)\.version/);
   assert.match(tagGate, /GITHUB_REF_NAME#v/);
-  assert.match(build, /run: scripts\/build-zip\.sh/);
-  assert.match(smoke, /unzip -q archify\.zip -d "\$package_root"/);
+  assert.match(build, /run: scripts\/build-zip\.sh \/tmp\/archify-built\.zip/);
+  assert.match(smoke, /unzip -q \/tmp\/archify-built\.zip -d "\$package_root"/);
   assert.match(smoke, /node scripts\/package-smoke\.mjs "\$package_root\/archify"/);
   assert.doesNotMatch(smoke, /\bnpm\s+(?:ci|install)\b/);
-  assert.match(freshness, /git checkout HEAD -- archify\.zip/);
   assert.match(freshness, /cmp -s \/tmp\/archify-built\.zip archify\.zip/);
   assert.match(upload, /files: archify\.zip/);
 });
@@ -175,6 +174,59 @@ test('archive build excludes untracked files and external symlinks from the live
   }
 });
 
+test('archive build rejects an unmerged index and preserves an existing archive', () => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-package-unmerged-'));
+  const scripts = path.join(fixture, 'scripts');
+  const skill = path.join(fixture, 'archify');
+  const license = path.join(skill, 'LICENSE');
+  const archive = path.join(fixture, 'trusted.zip');
+  const trusted = Buffer.from('trusted archive bytes');
+  const git = (args, options = {}) => spawnSync('git', args, {
+    cwd: fixture,
+    encoding: 'utf8',
+    ...options,
+  });
+
+  try {
+    fs.mkdirSync(path.join(skill, 'renderers', 'shared'), { recursive: true });
+    fs.mkdirSync(scripts);
+    fs.copyFileSync(path.join(repoRoot, 'scripts', 'build-zip.sh'), path.join(scripts, 'build-zip.sh'));
+    fs.copyFileSync(
+      path.join(repoRoot, 'scripts', 'write-deterministic-zip.mjs'),
+      path.join(scripts, 'write-deterministic-zip.mjs'),
+    );
+    fs.writeFileSync(path.join(skill, 'renderers', 'shared', 'generated-validators.mjs'), 'export default {};\n');
+    fs.writeFileSync(path.join(skill, 'package.json'), '{"name":"archify"}\n');
+    fs.writeFileSync(license, 'base\n');
+    assert.equal(git(['init']).status, 0);
+    assert.equal(git(['add', '.']).status, 0);
+
+    const base = git(['hash-object', '-w', '--stdin'], { input: 'base\n' });
+    const ours = git(['hash-object', '-w', '--stdin'], { input: 'ours\n' });
+    const theirs = git(['hash-object', '-w', '--stdin'], { input: 'theirs\n' });
+    for (const result of [base, ours, theirs]) assert.equal(result.status, 0, result.stderr);
+    const indexInfo = [
+      `100644 ${base.stdout.trim()} 1\tarchify/LICENSE`,
+      `100644 ${ours.stdout.trim()} 2\tarchify/LICENSE`,
+      `100644 ${theirs.stdout.trim()} 3\tarchify/LICENSE`,
+      '',
+    ].join('\n');
+    assert.equal(git(['update-index', '--index-info'], { input: indexInfo }).status, 0);
+    fs.writeFileSync(license, '<<<<<<< ours\n=======\n>>>>>>> theirs\n');
+    fs.writeFileSync(archive, trusted);
+
+    const build = spawnSync('bash', [path.join(scripts, 'build-zip.sh'), archive], {
+      cwd: fixture,
+      encoding: 'utf8',
+    });
+    assert.notEqual(build.status, 0, `${build.stdout}\n${build.stderr}`);
+    assert.match(build.stderr, /refusing to package unmerged index entry/);
+    assert.deepEqual(fs.readFileSync(archive), trusted, 'a failed build must preserve the trusted archive');
+  } finally {
+    fs.rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
 test('archive build is byte-for-byte reproducible across caller time zones without system zip', () => {
   const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-package-reproducible-'));
   const utcArchive = path.join(outputRoot, 'utc.zip');
@@ -203,9 +255,11 @@ test('archive build is byte-for-byte reproducible across caller time zones witho
       fs.readFileSync(path.join(repoRoot, 'archify.zip')),
       'the canonical archive toolchain must reproduce the committed archive bytes',
     );
-    const buildScript = fs.readFileSync(path.join(repoRoot, 'scripts', 'build-zip.sh'), 'utf8');
-    assert.match(buildScript, /write-deterministic-zip\.mjs/);
-    assert.doesNotMatch(buildScript, /(?:^|\s)zip\s/);
+    assert.deepEqual(
+      fs.readdirSync(outputRoot).sort(),
+      ['honolulu.zip', 'utc.zip'],
+      'successful archive publication must not leave temporary files behind',
+    );
   } finally {
     fs.rmSync(outputRoot, { recursive: true, force: true });
   }
@@ -228,5 +282,4 @@ test('CI tests the declared Node floor plus every maintained current lane', () =
   const packageSmokeJob = workflowJob(workflow, 'package-smoke');
   assert.match(packageSmokeJob, /os:\s*\[ubuntu-latest, macos-latest, windows-latest\]/);
   assert.match(packageSmokeJob, /node-version:\s*22/);
-  assert.doesNotMatch(packageSmokeJob, /compare exact bytes/);
 });

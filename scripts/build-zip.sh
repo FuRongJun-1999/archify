@@ -9,9 +9,11 @@ if [[ "$out" != /* ]]; then
   out="$(pwd)/$out"
 fi
 
-# Stage only files tracked by Git. This keeps untracked working-tree content out
-# of the archive, and rejecting tracked paths that are symlinks prevents an
-# archive build from reading through links to content outside the repository.
+# Stage only files tracked by Git. Paths and modes come from the index, while
+# bytes intentionally come from the working tree so contributors can package
+# tracked edits before committing them. A conflicted index is never publishable.
+# Rejecting tracked paths that are symlinks prevents an archive build from
+# reading through links to content outside the repository.
 # test/ is repo-only (the golden harness compares against ../examples at the
 # repo root, which does not exist in an installed skill). The npm scripts and
 # build-only dependencies are stripped from the shipped package.json. Runtime
@@ -27,6 +29,11 @@ while IFS= read -r -d '' record; do
   metadata="${record%%$'\t'*}"
   tracked="${record#*$'\t'}"
   tracked_mode="${metadata%% *}"
+  tracked_stage="${metadata##* }"
+  if [[ "$tracked_stage" != 0 ]]; then
+    echo "refusing to package unmerged index entry (stage $tracked_stage): $tracked" >&2
+    exit 1
+  fi
   case "$tracked" in
     archify/test | archify/test/* | \
     archify/package-lock.json | \
@@ -68,7 +75,6 @@ node -e "
 "
 rm -f "$stage/archify/package-lock.json"
 
-rm -f "$out"
 node "$repo_root/scripts/write-deterministic-zip.mjs" "$stage/archify" "$out"
 
 echo "built $out"
