@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { extractSvgs, parseXml } from './helpers/svg-xml.mjs';
+import { extractSvgs, parseXml } from './helpers/xml.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
@@ -28,30 +28,37 @@ function trackedHtmlArtifacts() {
     .sort();
 }
 
-test('artifact SVG extraction follows HTML quoting and nested SVG structure', () => {
+test('artifact SVG extraction follows HTML quoting and preserves SVG document boundaries', () => {
   const extracted = extractSvgs(`
     <script>const ignored = '<svg data-node-label></svg>';</script>
     <template><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/></template>
     <iframe srcdoc='&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;&lt;svg viewBox=&quot;0 0 1 1&quot;/&gt;&lt;/svg&gt;'></iframe>
   `);
   assert.equal(extracted.direct.length, 1, 'template SVG is markup while script text is not');
-  assert.equal(extracted.embedded.length, 2, 'single-quoted srcdoc retains both nested SVG elements');
+  assert.equal(extracted.embedded.length, 1, 'srcdoc contributes one top-level SVG document');
   for (const svg of [...extracted.direct, ...extracted.embedded]) assert.doesNotThrow(() => parseXml(svg));
+
+  const inheritedNamespace = extractSvgs(`
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <svg><use xlink:href="#icon"/></svg>
+    </svg>
+  `);
+  assert.equal(inheritedNamespace.direct.length, 1, 'nested SVG remains inside its XML document');
+  assert.doesNotThrow(() => parseXml(inheritedNamespace.direct[0]));
 });
 
-test('tracked generated artifacts embed well-formed XML SVG', () => {
+test('tracked browsable HTML embeds well-formed XML SVG', () => {
   const artifacts = trackedHtmlArtifacts();
-  assert.ok(artifacts.includes('docs/gallery.html'), 'expected the tracked generated Gallery page inventory');
-  let embeddedSvgCount = 0;
-  const checkedArtifacts = [];
+  const checkoutArtifact = 'examples/checkout-platform-delta.html';
+  assert.ok(artifacts.includes(checkoutArtifact), 'expected the tracked Checkout compare artifact');
+  let checkoutSvgs;
 
   for (const relative of artifacts) {
     const html = fs.readFileSync(path.join(repoRoot, relative), 'utf8');
     const extracted = extractSvgs(html);
-    embeddedSvgCount += extracted.embedded.length;
+    if (relative === checkoutArtifact) checkoutSvgs = extracted;
     const svgs = [...extracted.direct, ...extracted.embedded];
     if (svgs.length === 0) continue;
-    checkedArtifacts.push(relative);
     for (const [index, svg] of svgs.entries()) {
       assert.doesNotThrow(
         () => parseXml(svg),
@@ -60,7 +67,6 @@ test('tracked generated artifacts embed well-formed XML SVG', () => {
     }
   }
 
-  assert.ok(checkedArtifacts.length > 35, 'expected the tracked generated SVG artifact inventory');
-  assert.ok(checkedArtifacts.includes('examples/checkout-platform-delta.html'), 'expected the Compare artifact');
-  assert.ok(embeddedSvgCount >= 2, 'expected Compare base/head srcdoc SVG snapshots');
+  assert.equal(checkoutSvgs?.direct.length, 1, 'Checkout must contain one comparison SVG');
+  assert.equal(checkoutSvgs?.embedded.length, 2, 'Checkout must retain its base/head SVG snapshots');
 });
