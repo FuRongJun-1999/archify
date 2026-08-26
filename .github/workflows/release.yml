@@ -67,11 +67,9 @@ jobs:
           node scripts/package-smoke.mjs "$package_root/archify"
       - name: Committed zip must match the build (same gate as CI)
         run: |
-          mkdir /tmp/fresh /tmp/checked
-          unzip -q archify.zip -d /tmp/fresh
+          cp archify.zip /tmp/archify-built.zip
           git checkout HEAD -- archify.zip
-          unzip -q archify.zip -d /tmp/checked
-          diff -r /tmp/fresh/archify /tmp/checked/archify
+          cmp -s /tmp/archify-built.zip archify.zip
       - name: Create GitHub Release with the zip attached
         uses: softprops/action-gh-release@v2
         with:

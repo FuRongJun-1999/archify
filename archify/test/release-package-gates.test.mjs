@@ -45,7 +45,7 @@ test('release smokes the exact archive built for the release before freshness an
   assert.match(smoke, /node scripts\/package-smoke\.mjs "\$package_root\/archify"/);
   assert.doesNotMatch(smoke, /\bnpm\s+(?:ci|install)\b/);
   assert.match(freshness, /git checkout HEAD -- archify\.zip/);
-  assert.match(freshness, /diff -r \/tmp\/fresh\/archify \/tmp\/checked\/archify/);
+  assert.match(freshness, /cmp -s \/tmp\/archify-built\.zip archify\.zip/);
   assert.match(upload, /files: archify\.zip/);
 });
 
@@ -175,6 +175,42 @@ test('archive build excludes untracked files and external symlinks from the live
   }
 });
 
+test('archive build is byte-for-byte reproducible across caller time zones without system zip', () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'archify-package-reproducible-'));
+  const utcArchive = path.join(outputRoot, 'utc.zip');
+  const honoluluArchive = path.join(outputRoot, 'honolulu.zip');
+
+  try {
+    for (const [archive, timezone] of [
+      [utcArchive, 'UTC'],
+      [honoluluArchive, 'Pacific/Honolulu'],
+    ]) {
+      const build = spawnSync(path.join(repoRoot, 'scripts', 'build-zip.sh'), [archive], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        env: { ...process.env, TZ: timezone },
+      });
+      assert.equal(build.status, 0, `${build.stdout}\n${build.stderr}`);
+    }
+
+    assert.deepEqual(
+      fs.readFileSync(utcArchive),
+      fs.readFileSync(honoluluArchive),
+      'identical tracked inputs must produce identical archive bytes',
+    );
+    assert.deepEqual(
+      fs.readFileSync(utcArchive),
+      fs.readFileSync(path.join(repoRoot, 'archify.zip')),
+      'the canonical archive toolchain must reproduce the committed archive bytes',
+    );
+    const buildScript = fs.readFileSync(path.join(repoRoot, 'scripts', 'build-zip.sh'), 'utf8');
+    assert.match(buildScript, /write-deterministic-zip\.mjs/);
+    assert.doesNotMatch(buildScript, /(?:^|\s)zip\s/);
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+});
+
 test('CI tests the declared Node floor plus every maintained current lane', () => {
   const packageJson = JSON.parse(fs.readFileSync(path.join(repoRoot, 'archify', 'package.json'), 'utf8'));
   assert.equal(packageJson.engines?.node, '>=18');
@@ -192,4 +228,5 @@ test('CI tests the declared Node floor plus every maintained current lane', () =
   const packageSmokeJob = workflowJob(workflow, 'package-smoke');
   assert.match(packageSmokeJob, /os:\s*\[ubuntu-latest, macos-latest, windows-latest\]/);
   assert.match(packageSmokeJob, /node-version:\s*22/);
+  assert.doesNotMatch(packageSmokeJob, /compare exact bytes/);
 });

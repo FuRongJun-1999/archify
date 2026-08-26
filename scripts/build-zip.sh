@@ -23,7 +23,10 @@ if [[ ! -f "$repo_root/archify/renderers/shared/generated-validators.mjs" ]]; th
   echo 'generated validators are missing — run npm run generate:validators in archify/' >&2
   exit 1
 fi
-while IFS= read -r -d '' tracked; do
+while IFS= read -r -d '' record; do
+  metadata="${record%%$'\t'*}"
+  tracked="${record#*$'\t'}"
+  tracked_mode="${metadata%% *}"
   case "$tracked" in
     archify/test | archify/test/* | \
     archify/package-lock.json | \
@@ -45,8 +48,16 @@ while IFS= read -r -d '' tracked; do
 
   target="$stage/$tracked"
   mkdir -p "$(dirname "$target")"
-  cp -p "$source" "$target"
-done < <(git -C "$repo_root" ls-files -z -- archify)
+  cp "$source" "$target"
+  case "$tracked_mode" in
+    100755) chmod 0755 "$target" ;;
+    100644) chmod 0644 "$target" ;;
+    *)
+      echo "unsupported tracked package mode $tracked_mode: $tracked" >&2
+      exit 1
+      ;;
+  esac
+done < <(git -C "$repo_root" ls-files --stage -z -- archify)
 node -e "
   const fs = require('fs');
   const p = '$stage/archify/package.json';
@@ -58,7 +69,6 @@ node -e "
 rm -f "$stage/archify/package-lock.json"
 
 rm -f "$out"
-(cd "$stage" && zip -r -X -q "$out" archify)
+node "$repo_root/scripts/write-deterministic-zip.mjs" "$stage/archify" "$out"
 
-unzip -l "$out" | tail -1
 echo "built $out"
