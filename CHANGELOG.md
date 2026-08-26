@@ -4,6 +4,11 @@ All notable changes are documented here. Format loosely follows [Keep a Changelo
 
 ## [Unreleased]
 
+Development identity: `v2.16.0-dev.0`
+
+### Added
+- **Bounded Viewer localization.** All five renderers accept the optional `meta.locale` values `en` and `zh-CN`, localizing renderer-owned Viewer UI, accessibility copy, default legends, document titles, and language metadata without translating authored content. Omitted locale remains backward-compatible English, while unsupported authored languages retain their requested authored copy with an explicitly disclosed English Viewer fallback.
+
 ## [2.15.0] — 2026-08-17
 
 ### Added
