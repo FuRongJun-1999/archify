@@ -21,7 +21,7 @@ Archify 是适用于 Raven、Cursor、Claude Code、Codex CLI 和 OpenCode 的 A
 
 **当前开发版本：** `v2.16.0-dev.0`。详见[版本历史](CHANGELOG.md#unreleased)。
 
-**[在线项目页](https://tt-a1i.github.io/archify/)** · **[场景选图指南](https://tt-a1i.github.io/archify/guide.html)** · **[Proof Lab](https://tt-a1i.github.io/archify/gallery.html)**
+**[在线项目页](https://tt-a1i.github.io/archify/)** · **[场景选图指南](https://tt-a1i.github.io/archify/guide.html)** · **[Proof Lab](https://tt-a1i.github.io/archify/gallery.html)** · **[在 X 关注项目动态](https://x.com/t20000622yy)**
 
 ```bash
 npx skills add tt-a1i/archify -g
@@ -285,5 +285,7 @@ Claude.ai 中的上传入口：
 ## 参与贡献
 
 欢迎提交 Issue、Pull Request 和真实场景图。请先阅读[贡献指南](CONTRIBUTING.md)；遇到问题时使用可复现 Bug 表单，也可以通过[社区 Showcase 表单](https://github.com/tt-a1i/archify/issues/new?template=showcase.yml)提交已验证成品。
+
+版本进展、生成案例和开源记录也会同步发布在 [X / @t20000622yy](https://x.com/t20000622yy)。
 
 较大的功能或行为调整请先通过 Issue 对齐价值、兼容边界和非目标，再基于最新 `main` 开发。一个 PR 尽量只解决一个问题；核心代码和回归测试先行，生成物最后统一重建。Archify 坚持 Agent-first，优先完善稳定的机器可读诊断和现有权威合同，避免新增容易与 CLI 漂移的重复说明。
