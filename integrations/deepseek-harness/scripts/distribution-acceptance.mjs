@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnCli, spawnCliSync } from './resolve-cli.mjs';
+import { runWithTransientNetworkRetry } from './transient-retry.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const integrationRoot = path.resolve(here, '..');
@@ -232,28 +233,39 @@ const dshEnv = {
   npm_config_update_notifier: 'false',
 };
 
-// Install the pinned host once, as a user-level global install would. Keeping
-// this separate from plugin mutation makes a slow first-time npm download
-// distinguishable from `dsh plugin add`, especially on Windows runners.
-const runtimeInstall = run('npm', [
-  'install',
-  '--prefix', dshRuntime,
-  '--no-save',
-  '--package-lock=false',
-  '--no-audit',
-  '--no-fund',
-  '--foreground-scripts',
-  '--loglevel=warn',
-  DSH_SPEC,
-], {
-  cwd: scratch,
-  env: dshEnv,
-  // Stream npm lifecycle diagnostics without polluting the JSON-only receipt
-  // written to this process's stdout.
-  stdio: ['ignore', 2, 2],
-  timeout: DSH_RUNTIME_INSTALL_TIMEOUT,
+// Install the pinned host separately from plugin mutation so a slow npm
+// download remains distinguishable from `dsh plugin add`. Retry only a bounded
+// set of transient network failures, rebuilding the install root each time.
+const runtimeInstallOutcome = runWithTransientNetworkRetry((attempt) => {
+  fs.rmSync(dshRuntime, { recursive: true, force: true });
+  fs.mkdirSync(dshRuntime);
+  if (attempt > 1) {
+    process.stderr.write(`Retrying transient DSH runtime install (attempt ${attempt}/2)\n`);
+  }
+  return run('npm', [
+    'install',
+    '--prefix', dshRuntime,
+    '--no-save',
+    '--package-lock=false',
+    '--no-audit',
+    '--no-fund',
+    '--foreground-scripts',
+    '--loglevel=warn',
+    DSH_SPEC,
+  ], {
+    cwd: scratch,
+    env: dshEnv,
+    // Stream npm lifecycle diagnostics without polluting the JSON-only receipt
+    // written to this process's stdout.
+    stdio: ['ignore', 2, 2],
+    timeout: DSH_RUNTIME_INSTALL_TIMEOUT,
+  });
 });
-requireStatus('dsh-runtime-install', runtimeInstall, { command: `npm install ${DSH_SPEC}` });
+const runtimeInstall = runtimeInstallOutcome.result;
+requireStatus('dsh-runtime-install', runtimeInstall, {
+  command: `npm install ${DSH_SPEC}`,
+  attempts: runtimeInstallOutcome.attempts,
+});
 const dshPackageRoot = path.join(dshRuntime, 'node_modules', '@deepseek-ai', 'dsh');
 const dshManifest = JSON.parse(fs.readFileSync(path.join(dshPackageRoot, 'package.json'), 'utf8'));
 const dshBin = path.join(dshPackageRoot, 'lib', 'bin.js');
@@ -263,7 +275,10 @@ if (dshManifest.version !== DSH_SPEC.slice(DSH_SPEC.lastIndexOf('@') + 1) || !fs
     binExists: fs.existsSync(dshBin),
   });
 }
-pass('dsh-runtime-install', { version: dshManifest.version });
+pass('dsh-runtime-install', {
+  version: dshManifest.version,
+  attempts: runtimeInstallOutcome.attempts,
+});
 
 function dsh(args, options = {}) {
   return run(process.execPath, [dshBin, ...args], {

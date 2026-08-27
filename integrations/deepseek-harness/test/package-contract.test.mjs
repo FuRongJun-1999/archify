@@ -75,8 +75,8 @@ test('distribution acceptance reserves stdout for its machine-readable JSON rece
     path.join(integrationRoot, 'scripts', 'distribution-acceptance.mjs'),
     'utf8',
   );
-  const runtimeInstall = source.match(/const runtimeInstall = run\([\s\S]*?\n\}\);/)?.[0] || '';
-  assert.match(runtimeInstall, /stdio:\s*\['ignore',\s*2,\s*2\]/);
+  assert.match(source, /runWithTransientNetworkRetry/);
+  assert.match(source, /stdio:\s*\['ignore',\s*2,\s*2\]/);
   assert.doesNotMatch(source, /stdio:\s*['"]inherit['"]/);
   assert.equal([...source.matchAll(/process\.stdout\.write/g)].length, 2);
 });
