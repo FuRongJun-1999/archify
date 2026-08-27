@@ -76,6 +76,9 @@ test('distribution acceptance reserves stdout for its machine-readable JSON rece
     'utf8',
   );
   assert.match(source, /runWithTransientNetworkRetry/);
+  assert.match(source, /run\('pnpm'/);
+  assert.match(source, /--allow-build=@deepseek-ai\/dsh-subprocess-local/);
+  assert.doesNotMatch(source, /--allow-build=\*/);
   assert.match(source, /stdio:\s*\['ignore',\s*2,\s*2\]/);
   assert.doesNotMatch(source, /stdio:\s*['"]inherit['"]/);
   assert.equal([...source.matchAll(/process\.stdout\.write/g)].length, 2);

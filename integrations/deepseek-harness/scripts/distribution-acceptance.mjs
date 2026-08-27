@@ -233,24 +233,27 @@ const dshEnv = {
   npm_config_update_notifier: 'false',
 };
 
-// Install the pinned host separately from plugin mutation so a slow npm
-// download remains distinguishable from `dsh plugin add`. Retry only a bounded
-// set of transient network failures, rebuilding the install root each time.
+// Install the pinned host separately from plugin mutation so package-manager
+// failures remain distinguishable from `dsh plugin add`. pnpm handles DSH's
+// large dependency graph without npm's long silent resolution, while the
+// explicit build allowlist keeps lifecycle execution fail-closed.
 const runtimeInstallOutcome = runWithTransientNetworkRetry((attempt) => {
   fs.rmSync(dshRuntime, { recursive: true, force: true });
   fs.mkdirSync(dshRuntime);
   if (attempt > 1) {
     process.stderr.write(`Retrying transient DSH runtime install (attempt ${attempt}/2)\n`);
   }
-  return run('npm', [
-    'install',
-    '--prefix', dshRuntime,
-    '--no-save',
-    '--package-lock=false',
-    '--no-audit',
-    '--no-fund',
-    '--foreground-scripts',
-    '--loglevel=warn',
+  return run('pnpm', [
+    '--dir', dshRuntime,
+    'add',
+    '--save-exact',
+    '--reporter=append-only',
+    '--use-stderr',
+    '--allow-build=@deepseek-ai/dsh-subprocess-local',
+    '--allow-build=@google/genai',
+    '--allow-build=koffi',
+    '--allow-build=node-pty',
+    '--allow-build=protobufjs',
     DSH_SPEC,
   ], {
     cwd: scratch,
@@ -263,7 +266,7 @@ const runtimeInstallOutcome = runWithTransientNetworkRetry((attempt) => {
 });
 const runtimeInstall = runtimeInstallOutcome.result;
 requireStatus('dsh-runtime-install', runtimeInstall, {
-  command: `npm install ${DSH_SPEC}`,
+  command: `pnpm add ${DSH_SPEC}`,
   attempts: runtimeInstallOutcome.attempts,
 });
 const dshPackageRoot = path.join(dshRuntime, 'node_modules', '@deepseek-ai', 'dsh');
