@@ -25,7 +25,7 @@ Archify is an agent skill for Raven, Cursor, Claude Code, Codex CLI, and OpenCod
 
 **Current development version:** `v2.16.0-dev.0`. See [Changelog](CHANGELOG.md#unreleased).
 
-**[Project page](https://tt-a1i.github.io/archify/)** · **[Scenario guide](https://tt-a1i.github.io/archify/guide.html)** · **[Proof Lab](https://tt-a1i.github.io/archify/gallery.html)** · **[Follow updates on X](https://x.com/t20000622yy)**
+**[Project](https://tt-a1i.github.io/archify/)** · **[Guide](https://tt-a1i.github.io/archify/guide.html)** · **[Proof Lab](https://tt-a1i.github.io/archify/gallery.html)** · **[X](https://x.com/t20000622yy)**
 
 ```bash
 npx skills add tt-a1i/archify -g
@@ -283,5 +283,3 @@ Automatic Mermaid parsing, general-purpose auto-layout, hosted sharing, and WYSI
 ## Contributing
 
 Issues, pull requests, and real-world diagrams are welcome. Start with the [contribution guide](CONTRIBUTING.md), use the reproducible bug form for failures, or submit a validated diagram through the [community showcase form](https://github.com/tt-a1i/archify/issues/new?template=showcase.yml).
-
-Release notes, examples, and open-source updates are also shared on [X / @t20000622yy](https://x.com/t20000622yy).
