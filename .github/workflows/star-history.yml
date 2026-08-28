@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare chart output directory
+        run: mkdir -p assets
       - uses: xpzouying/star-history@8b1f26dc5e9a17caa75da9351b688509ef312811 # v1
         with:
           commit: 'false'

@@ -232,6 +232,10 @@ test('all README languages end with the self-hosted star history chart', () => {
   assert.match(workflow, /commit: ['"]false['"]/);
   assert.match(workflow, /bash scripts\/publish-star-history\.sh star-history/);
   assert.doesNotMatch(workflow, /branch: star-history/);
+  const prepareOutputIndex = workflow.indexOf('run: mkdir -p assets');
+  const generateChartIndex = workflow.indexOf('uses: xpzouying/star-history@');
+  assert.ok(prepareOutputIndex >= 0, 'Star History workflow must create the chart output directory');
+  assert.ok(prepareOutputIndex < generateChartIndex, 'Star History output directory must exist before generation');
 });
 
 test('Star History publishing advances the data branch without a force push', () => {
