@@ -24,7 +24,7 @@ function git(cwd, ...args) {
 function writeStarHistoryCharts(cwd, version) {
   const assets = path.join(cwd, 'assets');
   fs.mkdirSync(assets, { recursive: true });
-  fs.writeFileSync(path.join(assets, 'star-history.svg'), `<svg><title>light ${version}</title></svg>\n`);
+  fs.writeFileSync(path.join(assets, 'star-history-light.svg'), `<svg><title>light ${version}</title></svg>\n`);
   fs.writeFileSync(path.join(assets, 'star-history-dark.svg'), `<svg><title>dark ${version}</title></svg>\n`);
 }
 
@@ -213,7 +213,7 @@ test('README stays scannable without deleting the visual proof set', () => {
 });
 
 test('all README languages end with the self-hosted star history chart', () => {
-  const lightChart = 'https://raw.githubusercontent.com/tt-a1i/archify/star-history/assets/star-history.svg';
+  const lightChart = 'https://raw.githubusercontent.com/tt-a1i/archify/star-history/assets/star-history-light.svg';
   const darkChart = 'https://raw.githubusercontent.com/tt-a1i/archify/star-history/assets/star-history-dark.svg';
   const workflow = fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'star-history.yml'), 'utf8');
 
@@ -228,14 +228,13 @@ test('all README languages end with the self-hosted star history chart', () => {
   }
 
   assert.match(workflow, /permissions:\n  contents: write/);
-  assert.match(workflow, /xpzouying\/star-history@[0-9a-f]{40}/);
+  assert.match(workflow, /narayann7\/star-history-action@[0-9a-f]{40}/);
+  assert.match(workflow, /output-dir: assets/);
+  assert.match(workflow, /update-readme: ['"]false['"]/);
   assert.match(workflow, /commit: ['"]false['"]/);
   assert.match(workflow, /bash scripts\/publish-star-history\.sh star-history/);
   assert.doesNotMatch(workflow, /branch: star-history/);
-  const prepareOutputIndex = workflow.indexOf('run: mkdir -p assets');
-  const generateChartIndex = workflow.indexOf('uses: xpzouying/star-history@');
-  assert.ok(prepareOutputIndex >= 0, 'Star History workflow must create the chart output directory');
-  assert.ok(prepareOutputIndex < generateChartIndex, 'Star History output directory must exist before generation');
+  assert.doesNotMatch(workflow, /xpzouying\/star-history/);
 });
 
 test('Star History publishing advances the data branch without a force push', () => {
@@ -283,10 +282,10 @@ test('Star History publishing advances the data branch without a force push', ()
     git(fixture, '--git-dir', remote, 'merge-base', '--is-ancestor', firstCommit, secondCommit);
     assert.deepEqual(
       git(fixture, '--git-dir', remote, 'ls-tree', '-r', '--name-only', secondCommit).split('\n'),
-      ['assets/star-history-dark.svg', 'assets/star-history.svg'],
+      ['assets/star-history-dark.svg', 'assets/star-history-light.svg'],
     );
     assert.match(
-      git(fixture, '--git-dir', remote, 'show', `${secondCommit}:assets/star-history.svg`),
+      git(fixture, '--git-dir', remote, 'show', `${secondCommit}:assets/star-history-light.svg`),
       /light v2/,
     );
   } finally {

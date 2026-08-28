@@ -3,7 +3,7 @@
 set -euo pipefail
 
 data_branch="${1:-star-history}"
-light_chart="${2:-assets/star-history.svg}"
+light_chart="${2:-assets/star-history-light.svg}"
 dark_chart="${3:-assets/star-history-dark.svg}"
 
 git check-ref-format --branch "$data_branch" >/dev/null
