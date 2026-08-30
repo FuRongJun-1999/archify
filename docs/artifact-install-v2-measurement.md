@@ -1,6 +1,6 @@
 # Artifact → Install v2 measurement contract
 
-Artifact → Install v2 is a bounded change to the existing journey. A generated artifact links to `start.html?type=<type>&source=artifact`, while each Proof Lab card links to `start.html?type=<type>&source=gallery`. The Start page selects the matching typed recipe and can copy the selected agent's install command plus the bounded prompt in one action.
+Artifact → Install v2 is a bounded change to the existing journey. Proof Lab cards link to `start.html?type=<type>&source=gallery`, and the Start page selects the matching typed recipe and can copy the selected agent's install command plus the bounded prompt in one action. Generated artifacts no longer emit the former footer link; `source=artifact` remains accepted only for compatibility with already-shared artifact URLs.
 
 The page records only coarse interaction steps:
 
@@ -23,7 +23,7 @@ Events are capped at the latest 24 entries in `sessionStorage` under `archify.st
 
 Within a controlled browser test or an explicitly instrumented host, compute:
 
-- Artifact arrival share: `source=artifact` `start_view` / all `start_view`
+- Legacy artifact arrival share: `source=artifact` `start_view` / all `start_view`
 - Gallery arrival share: `source=gallery` `start_view` / all `start_view`
 - Combined starter copy rate: `starter_copy / start_view`
 - Any install copy rate: (`starter_copy` + `global_install_copy` + `project_install_copy`) / `start_view`

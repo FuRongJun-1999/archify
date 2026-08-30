@@ -4,6 +4,49 @@ All notable changes are documented here. Format loosely follows [Keep a Changelo
 
 ## [Unreleased]
 
+Development identity: `v2.16.0-dev.0`
+
+### Added
+- **Constraint-driven Workflow Compiler (#126).** Workflow schema v2 adds the `readable-v2` contract: columns `0..5` remain logical ranks while one measured scene owns node placement, phase/group frames, routes, semantic labels, content bounds, diagnostics, and SVG serialization. Valid schema v1 workflows stay on byte-stable `fixed-v1` geometry, `validate workflow ... --layout-json` exposes a stable author-facing compiler receipt, and `migrate workflow <source> <destination> --to-schema 2 --json` maps absolute coordinates non-destructively before writing only a fully checked destination. Adjacent-column capacity failures now report one causal diagnosis instead of cascading through short-edge, endpoint-direction, and label-overlap symptoms.
+- **Bounded Viewer localization.** All five renderers accept the optional `meta.locale` values `en` and `zh-CN`, localizing renderer-owned Viewer UI, accessibility copy, default legends, document titles, and language metadata without translating authored content. Omitted locale remains backward-compatible English, while unsupported authored languages retain their requested authored copy with an explicitly disclosed English Viewer fallback.
+- **Optional embedded Skill update awareness.** The packaged Skill can perform a cached, notification-only stable-release check with a fixed trusted manifest URL, strict identity and response bounds, SemVer downgrade protection, per-installed-version state, two-stage visible-notice acknowledgement, and a one-second fail-silent timeout. It never downloads, installs, executes, or overwrites an update; the user remains the sole update decision owner. Release identity, final ZIP contents, stable tag/tree/archive digests, and cross-platform packaged execution are gated in tests and release automation.
+
+### Changed
+- Workflow authoring now preserves semantic edge labels and repairs measured spacing or route constraints rather than treating label deletion as a geometry workaround. Documentation also makes `--repo-root` architecture-only, defines lifecycle event/terminal column `N` as aligned with main column `N + 2`, and warns that `visual-check` after failed delivery would inspect the preserved previous artifact.
+
+### Fixed
+- Skill packaging now stages only tracked regular files through one symlink-safe path shared by the release ZIP and DeepSeek Harness bundle, while preserving legitimate nested runtime test directories and rejecting stale or dependency-bearing artifacts.
+- Update checks use generation-fenced atomic cache snapshots, unconditional bounded requests without persistent server validators, and a Release-first publication gate that verifies the published archive digest and tagged Skill tree before a gated GitHub Pages deployment can expose a stable manifest.
+
+## [2.15.0] — 2026-08-17
+
+### Added
+- **Authored brand identity.** All five diagram types accept an optional explicit `brand` on their primary nodes. Archify ships 107 provenance-backed vector marks, exposes `archify brands` discovery, and renders a compact upper-right badge without replacing the upper-left semantic sigil, node type, label, or topology. Unknown official URLs use an explicit digest-pinned capture command; render, validate, and deliver re-fetch bounded PNG/JPEG/WebP/ICO bytes, verify the authored SHA-256, embed the result into the standalone HTML, and fail closed on drift, malformed content, unsafe destinations, or a diagram-wide timeout. Remote SVG is rejected and ordinary diagrams remain unchanged.
+- **Sequence column fitting.** Sequence diagrams may opt into `meta.column_fit: "spread"` to use a wide authored viewBox while the existing fixed-width layout remains the default.
+- **DeepSeek Harness distribution.** The isolated `@tt-a1i/archify-dsh` Skill-only bundle adds explicit DSH installation without adding a DSH dependency, automatic probing, telemetry, or behavior changes for non-DSH users. Packaging and acceptance checks cover macOS, Linux, and Windows command resolution.
+
+### Changed
+- README and integration documentation now include a direct DeepSeek Harness quick start while keeping the canonical Archify Skill as the shared runtime.
+
+### Fixed
+- The CLI rejects `--quality` when no value follows instead of silently accepting an incomplete command.
+- Shared overlap checks ignore non-finite rectangles after the existing geometry diagnostics report them, avoiding duplicate pairwise noise.
+- The DeepSeek Harness tarball now excludes the brand catalogue generator, preserving byte-equivalent clean Skill contents with `archify.zip`.
+
+## [2.14.0] — 2026-08-11
+
+### Added
+- **Bounded visual evidence checks.** `archify visual-check <output.html> --json` now measures first-screen containment at 1440×900, 1600×1000, 1920×1080, and 2048×1320, captures light/dark evidence at the two endpoint sizes, and writes a relative-path contact sheet plus a machine receipt that remains explicitly `visualReview: "pending"`. Chrome absence is reported as `skipped` rather than a false pass, and the zero-install Node 18 runtime remains dependency-free.
+
+### Changed
+- **Safer diagram authoring defaults.** Generated copy follows the user's conversation language while preserving technical names; titles stay compact and omit redundant subtitles; relationship labels are treated as semantic data and may be removed only as an auditable last resort; and `deployment-ownership` is reserved for explicit deployment or ownership reviews rather than inferred from ordinary security boundaries.
+- **More compact viewer chrome.** The default remains Classic in both themes, the toolbar and single-column Export menu use quieter sizing and hierarchy, generated promotional footers are removed, and the diagram view dock now shows only the current percentage at rest while retaining PATH, MAP, LENS, search, help, zoom, and touch-safe mobile controls.
+
+### Fixed
+- Wide desktop diagrams now use the available viewport height without forcing unnecessary page scrolling or leaving a conspicuous empty lower band.
+- Near-aligned architecture relationships keep a straight axis when only one endpoint needs automatic port spreading, while fan-out separation, two-ended bridges, obstacle avoidance, and explicit route controls remain authoritative.
+- Long component sublabels and tags use shared measured fitting across all five renderers instead of overflowing their nodes.
+
 ## [2.13.0] — 2026-08-03
 
 ### Added

@@ -168,7 +168,7 @@ Archify is flat and tonal by default. Borders and surface contrast establish str
 ### Buttons
 
 - **Shape:** compact rounded rectangle (`0.5rem`), or precise corners (`0.2rem`) in Blueprint.
-- **Primary:** translucent toolbar material, one-pixel structural border, mono body label, and at least `2.75rem` height.
+- **Primary:** translucent toolbar material, one-pixel structural border, and mono body label. Desktop viewer chrome may use compact 32px controls; touch and narrow-screen targets stay at least `2.75rem` high.
 - **Hover / Focus:** 150ms border/background response; `2px` cyan focus ring with `2px` offset.
 - **Secondary / Ghost:** transparent within menus; never add a second saturated fill hierarchy.
 
@@ -204,6 +204,15 @@ One focused node opens one compact proof surface containing stable ID, authored 
 
 An evidence-backed node receives one viewer-only `SRC n` capsule in its upper-right corner. It inherits node state, adds no tab stop, and is stripped from every canonical visual export.
 
+### Brand Mark
+
+An authored `brand` adds one compact identity badge to the upper-right of the
+node. Built-in vectors and explicitly captured, digest-pinned site icons sit on a neutral plate;
+their color stays inside that plate and never recolors the semantic node, edge,
+legend, focus, or evidence vocabulary. The semantic sigil remains visible. A
+Verified Source Beacon shifts left when both facts are present. Brand marks are
+canonical authored SVG content and therefore survive visual export.
+
 ### Authored Reachability
 
 Semantic Passport offers two native, count-bearing actions: `Upstream` follows authored incoming relationships and `Downstream` follows authored outgoing relationships. The canvas keeps the focused origin plus the complete reachable subgraph strong while unrelated topology recedes. Upstream uses Repository Violet, downstream uses Proof Green, and Blueprint removes glow. The receipt says nodes, links, and maximum hops; it never says blast radius or breakage.
@@ -230,7 +239,7 @@ An active reach query may expose one contextual **Export → Reach Share Card** 
 - **Don't** turn Archify into WYSIWYG drawing suites whose editing chrome becomes the product.
 - **Don't** ship motion-first graph demos that imply relationships or activity not present in the authored source.
 - **Don't** use dense dashboard shells, endless identical card grids, decorative glass, gradient text, and other AI-generated interface clichés.
-- **Don't** add vendor-icon catalogues or product-name matching that weaken Archify's portable semantic vocabulary.
+- **Don't** infer identity from arbitrary label text, add an unbounded icon marketplace, or let a brand badge replace the portable semantic vocabulary.
 - **Don't** create another permanent panel when the Semantic Passport, Node Finder, or existing canvas can carry the capability.
 - **Don't** call graph reachability runtime impact, blast radius, or breakage without independent code-analysis evidence.
 - **Don't** change the README Hero as a side effect of artifact or viewer iteration.

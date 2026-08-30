@@ -9,15 +9,15 @@
   "proofLevel": "authored",
   "base": {
     "title": "Checkout Platform — Baseline",
-    "rawSha256": "3cc9e5b6075aa77b51a892d2cfeba16e0f8eb0f00416e0337e94ec8ec6300d8c",
-    "semanticSha256": "c6abe82520a9a634a275f2c38f07bdb9497275dbecaa76054cec6c28925579cb",
-    "bytes": 2304
+    "rawSha256": "c112195e7285e3e4aedaeab3e1f85f5891d30fccc2c260aebe4e1da12c80cf84",
+    "semanticSha256": "5d2f362ed389af82b117a01d36201e27cb83503093b14c50f7cd8dada55f243a",
+    "bytes": 2234
   },
   "head": {
     "title": "Checkout Platform — Fraud Gate",
-    "rawSha256": "54982cff83d1a91316097e27fde009b10e7c07a2e321e8bff94ec21ef902e5f2",
-    "semanticSha256": "66eaa8c327626376defe232a771d5da22509047f44ffb82e2f04d76b0243bf63",
-    "bytes": 2434
+    "rawSha256": "e3aaf47f77afeadafc81c6ce853dc1df68cc1e6932dec972cf478f4008fdda99",
+    "semanticSha256": "0b378c8f24d23ec63feecacd7ff84a4944534f4306fc2b7e3266dff9ba258852",
+    "bytes": 2368
   },
   "summary": {
     "components": {
@@ -219,8 +219,8 @@
     "Boundary identity is conservatively derived from kind + label."
   ],
   "artifact": {
-    "sha256": "44c80ea170dff7d73c93ccda00ae851db85c4b81afa1bdd639585bc9c29972e4",
-    "bytes": 1736967
+    "sha256": "fac25cdc6d96bf5be6fa42520c80e161964a5d8d7f5f61031150bcde41094596",
+    "bytes": 2023841
   },
   "validation": {
     "checksPassed": 28,

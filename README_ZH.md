@@ -8,34 +8,36 @@
 
 **在对话里，把代码仓库或系统描述变成漂亮、可靠、可交互的系统地图。**
 
-Archify 是适用于 Raven、Cursor、Claude Code、Codex CLI 和 OpenCode 的 Agent Skill。给它系统描述或代码仓库，就能得到可交互、可分享的专业技术地图。
+Archify 是一套基于 Node.js 的渲染与校验系统，并以 Agent Skill 的形式支持 Raven、Cursor、Claude Code、Codex CLI 和 OpenCode。Agent 负责生成 Typed JSON IR，Archify 再校验并确定性编译为便携、独立的 HTML/SVG 成品。
 
-- **打开就是成品** —— 五种技术图、四套视觉预设、深浅主题，以及显式启用的有限动态
+- **打开就是成品** —— 五种技术图、四套视觉预设、深浅主题、内置品牌徽标，以及显式启用的有限动态
 - **合并前先看清架构变化** —— 把两份已校验快照对比为 Before / Delta / After，准确区分新增、删除、语义变化、移动和重路由
 - **每次探索都有依据** —— 搜索节点、按需打开版本校验过的源码、追踪作者定义的上下游可达范围与精确路径、对比角色、播放故事，但不编造拓扑
 - **一个文件即可放心交付** —— Typed JSON IR 和确定性校验生成独立 HTML，并支持 PNG、SVG、WebM 与 1200×630 分享卡片
 
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=flat-square)
 ![Agent Skill](https://img.shields.io/badge/Agent-Skill-7C3AED?style=flat-square)
-![稳定版本](https://img.shields.io/badge/version-2.13.0-0891b2?style=flat-square)
+![开发版本](https://img.shields.io/badge/version-2.16.0--dev.0-0891b2?style=flat-square)
 
-**当前稳定版本：** `v2.13.0`。详见[版本历史](CHANGELOG.md#2130--2026-08-03)。
+**当前开发版本：** `v2.16.0-dev.0`。详见[版本历史](CHANGELOG.md#unreleased)。
 
 **[在线项目页](https://tt-a1i.github.io/archify/)** · **[场景选图指南](https://tt-a1i.github.io/archify/guide.html)** · **[Proof Lab](https://tt-a1i.github.io/archify/gallery.html)**
 
 ```bash
 npx skills add tt-a1i/archify -g
 ```
-
 使用 Cursor？打开[可切换 Agent 的快速开始页](https://tt-a1i.github.io/archify/start.html?agent=cursor&type=architecture)，即可获得准确的全局或当前仓库安装命令。
 
-然后告诉 Agent：`使用 archify 梳理这个仓库的运行时架构。`
+**不需要绑定代码库：**在任意 Agent 对话里描述系统即可。
 
-## ❤️ 赞助
+## ❤️ 赞助伙伴
 
-<a href="https://github.com/EverMind-AI/Raven"><img src="docs/assets/sponsors/evermind-archify-raven.png" alt="Archify × Raven——绘制系统，保留上下文" width="100%"></a>
+<table>
+  <tr><td align="center" width="240"><a href="https://apinebula.ai/ref/wywnaATT"><img src="docs/assets/sponsors/apinebula-archify.jpg" alt="APINEBULA" width="200" /></a><br/><strong><a href="https://apinebula.ai/ref/wywnaATT">APINEBULA</a></strong></td><td>感谢 APINEBULA 赞助 Archify。APINEBULA 通过统一接口提供 Claude、GPT、Gemini 等主流模型。通过 <a href="https://apinebula.ai/ref/wywnaATT">Archify 专属链接</a>注册并填写优惠码 <strong><code>Archify</code></strong>，即可享受<strong>9 折优惠</strong>。</td></tr>
+  <tr><td align="center" width="240"><a href="https://github.com/EverMind-AI/Raven"><img src="docs/assets/sponsors/evermind-archify-raven.png" alt="Archify × Raven" width="200" /></a><br/><strong><a href="https://github.com/EverMind-AI">EverMind</a> · <a href="https://github.com/EverMind-AI/Raven">Raven</a></strong></td><td>感谢 EverMind 赞助 Archify。EverMind 专注 Agent 记忆基础设施，旗下 <a href="https://github.com/EverMind-AI/Raven"><strong>Raven</strong></a> 已支持 Archify Skill，让 Raven 工作流可以直接生成经过验证的交互式系统地图。</td></tr>
+</table>
 
-本项目由专注 Agent 记忆基础设施的 [**EverMind**](https://github.com/EverMind-AI) 赞助。EverMind 旗下以记忆为核心、可自进化的 Agent Harness [**Raven**](https://github.com/EverMind-AI/Raven) 已支持 Archify Skill，让 Raven 工作流可以直接生成经过验证的交互式系统地图。
+> 想赞助 Archify？[欢迎通过邮件联系我们。](mailto:2801884530@qq.com)
 
 ## 看看 Archify 能做什么
 
@@ -104,21 +106,22 @@ npx -y skills add tt-a1i/archify --skill archify --agent cursor --global --copy 
 npx skills use tt-a1i/archify@archify --agent codex
 ```
 
-[Agent 切换器](https://tt-a1i.github.io/archify/start.html?agent=cursor&type=architecture)只为 `cursor`、`codex`、`claude-code` 和 `opencode` 生成命令。Raven 仅支持 ZIP 手动安装：将 [`archify.zip`](archify.zip) 解压到 `~/.raven/workspace/skills`，解压后会得到 `~/.raven/workspace/skills/archify`；Raven 不属于切换器目标。
+DeepSeek Harness（社区集成、显式启用）：运行 `dsh plugin --profile web add @tt-a1i/archify-dsh@0.1.0`；参见[兼容范围、限制与安全说明](integrations/deepseek-harness/README.md)。[Agent 切换器](https://tt-a1i.github.io/archify/start.html?agent=cursor&type=architecture)只为 `cursor`、`codex`、`claude-code` 和 `opencode` 生成命令。Raven 仅支持 ZIP 手动安装：将 [`archify.zip`](archify.zip) 解压到 `~/.raven/workspace/skills`，解压后会得到 `~/.raven/workspace/skills/archify`；Raven 不属于切换器目标。
 
-### 2. 先画一个边界清楚的视图
+安装后的 Skill 包含一个低频、失败静默的发布检查，它最多只显示可选更新提醒，绝不会自行下载或安装更新。一次成功检查后，下次网络请求通常约在 72 小时（±20%）后发出；检查失败后，活跃使用可能在首次 6 小时、后续 24 小时退避到期时重试。请求只访问 `https://tt-a1i.github.io/archify/skill-updates/archify/stable.json`。服务端会自然获得 IP、请求时间和常规 HTTP 元数据；检查器不会发送本地版本、Agent、项目数据、用户输入、账户/设备标识，也不会保存或回传 ETag。是否更新以及何时更新始终由你决定。如需完全关闭检查（包括网络请求和提醒状态写入），请在 Agent 环境中设置 `ARCHIFY_UPDATE_CHECK_DISABLED=1`。
+
+### 2. 直接从描述开始——不需要代码库
+
+```text
+用 Archify 画出：Browser -> API -> Redis 缓存 -> PostgreSQL 回源。
+```
+
+需要源码证据时，打开仓库后改用：
 
 ```text
 分析这个仓库，然后使用 archify 生成一张高层运行时架构图。
 只保留 8–12 个核心组件，突出一条主要路径，并标出外部依赖与信任边界。
 辅助信息放进说明卡片，不要继续增加连线。
-```
-
-如果只想解释一条调用链：
-
-```text
-使用 archify 画出这条登录流程：Browser -> Web App -> API -> JWT 校验 ->
-Redis Session 查询 -> PostgreSQL 回源。把缓存未命中作为次要路径。
 ```
 
 ### 3. 在对话中细调
@@ -217,13 +220,14 @@ node bin/archify.mjs deliver workflow examples/agent-tool-call.workflow.json /tm
 ```json
 {
   "meta": {
+    "locale": "zh-CN",
     "animation": "trace",
     "visual_preset": "signal-flow"
   }
 }
 ```
 
-不设置 `animation` 时结果完全静态；`classic` 始终是默认视觉预设。设计评审、发布说明和技术文档可以显式选择 `editorial`，获得暖纸张与深墨色的编辑风格，同时保持几何完全不变。
+不设置 `animation` 时结果完全静态；`classic` 始终是默认视觉预设。设计评审、发布说明和技术文档可以显式选择 `editorial`，获得暖纸张与深墨色的编辑风格，同时保持几何完全不变。将 `meta.locale` 设为 `en` 或 `zh-CN`，可选择 `<html lang>`、默认图例、无障碍文案和所有固定 Viewer UI。作者编写的标题、节点、关系、章节和卡片不会被机器翻译。未带该字段的旧文件仍然有效，并默认使用英文。对于其他任何创作语言，应省略 `meta.locale`、保持 authored content 使用用户要求的语言，并主动告知用户固定 Viewer UI 与 `<html lang>` 回退为英文，因此该成品不属于完整本地化。
 
 ## 探索与分享
 
@@ -232,9 +236,9 @@ node bin/archify.mjs deliver workflow examples/agent-tool-call.workflow.json /tm
 | 打开事实型 Diagram Guide | <kbd>?</kbd> |
 | 查找并聚焦语义节点 | <kbd>/</kbd> |
 | 追踪作者定义的上游 / 下游可达范围 | 聚焦节点 → `Upstream` / `Downstream` |
-| 探查有向路径并逐站检查 | <kbd>R</kbd> 或 `PATH` |
-| 对比一种或两种语义角色 | <kbd>L</kbd> 或 `LENS` |
-| 打开实时全局雷达 | <kbd>M</kbd> 或 `MAP` |
+| 探查有向路径并逐站检查 | <kbd>R</kbd> 或“路径” |
+| 对比一种或两种语义角色 | <kbd>L</kbd> 或“透镜” |
+| 打开实时全局雷达 | <kbd>M</kbd> 或“地图” |
 | 播放故事 / 切换章节 | <kbd>P</kbd> / <kbd>[</kbd> <kbd>]</kbd> |
 | 进入 Presentation Stage | <kbd>F</kbd> |
 | 选择视觉风格（<kbd>S</kbd> 循环）/ 切换主题 / 打开 Export | <kbd>S</kbd> / <kbd>T</kbd> / <kbd>E</kbd> |
@@ -254,21 +258,21 @@ node bin/archify.mjs deliver workflow examples/agent-tool-call.workflow.json /tm
 | **opencode** | `~/.config/opencode/skills/`、`.opencode/skills/` 或 `.agents/skills/` | 完整 Renderer + Validation 工作流 |
 | **Claude.ai** | Settings → Capabilities → Skills 中上传 `archify.zip` | 取决于沙箱是否提供 Node.js |
 | **Project Knowledge** | 把 `archify.zip` 上传到项目 | Prompt 驱动的 Architecture Fallback |
-
 Claude.ai 中的上传入口：
 
 ![Claude Skills 设置](docs/assets/claude-skills-settings.png)
+
+**DeepSeek Harness：** 面向开发者预览版 `@deepseek-ai/dsh@0.1.0-rc.6` 的社区集成，不是 DeepSeek 官方产品；Node `^22.19.0 || >=24.0.0`。安装：`dsh plugin --profile web add @tt-a1i/archify-dsh@0.1.0`；调用：`Use the archify skill to map this repository's runtime architecture.`；卸载：`dsh plugin --profile web remove @tt-a1i/archify-dsh`。没有遥测；shell 文件不会自动进入 Web Produced Files，请返回精确工作区路径。[详情](integrations/deepseek-harness/README.md)。
 
 ## 参考与边界
 
 - [Schema 说明](archify/schemas/README.md)
 - [Skill 与 Renderer 契约](archify/SKILL.md)
 - [示例](archify/examples/)
+- [Agent 编图手册](docs/authoring-cookbook.zh-CN.md) · [English](docs/authoring-cookbook.md)
 - [版本历史](CHANGELOG.md)
 - [路线图](ROADMAP.md)
 - [自动生成的 Proof Lab](https://tt-a1i.github.io/archify/gallery.html)
-
-Archify 2.13 覆盖五种 Typed IR、真实仓库证明、基于精确 ID 的确定性 Architecture Delta 评审、验证后实时预览、作者可达性、真实可配置图例、可选有限动态、引导视图、语义搜索与关系探索、可分享深链、1200×630 整图与路径卡片、浏览器原生 WebM、显式 `standard` / `showcase` 质量档位，以及按需启用的部署所有权契约。
 
 自动 Mermaid Parser、通用自动布局、托管分享服务和 WYSIWYG 编辑器目前都不在产品范围内。
 
@@ -279,3 +283,9 @@ Archify 2.13 覆盖五种 Typed IR、真实仓库证明、基于精确 ID 的确
 ## 参与贡献
 
 欢迎提交 Issue、Pull Request 和真实场景图。请先阅读[贡献指南](CONTRIBUTING.md)；遇到问题时使用可复现 Bug 表单，也可以通过[社区 Showcase 表单](https://github.com/tt-a1i/archify/issues/new?template=showcase.yml)提交已验证成品。
+
+较大的功能或行为调整请先通过 Issue 对齐价值、兼容边界和非目标，再基于最新 `main` 开发。一个 PR 尽量只解决一个问题；核心代码和回归测试先行，生成物最后统一重建。Archify 坚持 Agent-first，优先完善稳定的机器可读诊断和现有权威合同，避免新增容易与 CLI 漂移的重复说明。&nbsp;·&nbsp;[LINUX&nbsp;DO](https://linux.do)
+
+## Star History
+
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/tt-a1i/archify/star-history/assets/star-history-dark.svg" /><img alt="Star History" src="https://raw.githubusercontent.com/tt-a1i/archify/star-history/assets/star-history-light.svg" /></picture></p>
