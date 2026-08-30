@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SCENARIO_RECIPES, startPromptsFor } from '../archify/recipes/scenarios.mjs';
 import { copySiteAssets } from './copy-site-assets.mjs';
+import { diagramTypeCopyReplacements } from './site-copy.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -49,6 +50,7 @@ const startJson = JSON.stringify(startData)
   .replaceAll('>', '\\u003e');
 
 const replacements = {
+  ...diagramTypeCopyReplacements(),
   '[[ARCHIFY_VERSION]]': packageJson.version,
   '[[START_JSON]]': startJson,
 };
