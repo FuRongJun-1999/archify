@@ -568,6 +568,19 @@ function renderNode(node) {
   const hitBadge = node.card_hit === true
     ? `\n          <circle cx="${node.x + node.width - 10}" cy="${node.y + 14}" r="4" class="c-database" stroke-width="1"/>`
     : '';
+  // confidence drives visibility (B1): fill opacity scales with declared
+  // belief, and non-unity confidence is annotated so the number is readable.
+  const hasConfidence = typeof node.confidence === 'number';
+  const confidenceOpacity = hasConfidence
+    ? (0.55 + 0.45 * Math.max(0, Math.min(1, node.confidence))).toFixed(2)
+    : '1';
+  const confidenceTag = hasConfidence && node.confidence !== 1
+    ? `\n          <text data-detail="confidence" x="${node.x + node.width - 6}" y="${node.y + node.height - 6}" class="t-dim" font-size="9" text-anchor="end">conf ${node.confidence}</text>`
+    : '';
+  // edu_level renders as a conditional-space tier tag (bottom-left, E1–E5).
+  const eduTag = node.edu_level
+    ? `\n          <text data-detail="edu-level" x="${node.x + 6}" y="${node.y + node.height - 6}" class="t-dim" font-size="9" text-anchor="start">${esc(String(node.edu_level))}</text>`
+    : '';
   const tag = node.tag
     ? `\n          <text data-detail="fine" x="${node.cx}" y="${node.y + node.height - 12}" class="${accent}" font-size="${fittedNodeFontSize(node.tag, node.width, nodeTextFit.tagPreferred, nodeTextFit.tagMinimum)}" text-anchor="middle">${esc(node.tag)}</text>`
     : '';
@@ -576,17 +589,29 @@ function renderNode(node) {
   return `        <g ${focusNodeAttrs(node.id, node.label, passport, cognition.meta.locale)}>
           ${focusNodeTitle(node.label, passport)}
           <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" class="c-mask"/>
-          <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" class="${fill}"${animateAttr(cognition.meta, 'node', nodeStep(node))} stroke-width="1.5"/>
-          ${renderSemanticSigil(node.verdict, { x: node.x + 6, y: node.y + 6 })}${brand ? `\n          ${brand}` : ''}${hitBadge}
-          <text data-node-label=""${hasSub ? ' data-detail-anchor=""' : ''} x="${node.cx}" y="${node.y + 21}" class="t-primary" font-size="${labelFontSize}" font-weight="600" text-anchor="middle">${esc(node.label)}</text>${sub}${hitBadge}${tag}
+          <rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" class="${fill}" fill-opacity="${confidenceOpacity}"${animateAttr(cognition.meta, 'node', nodeStep(node))} stroke-width="1.5"/>
+          ${renderSemanticSigil(node.verdict, { x: node.x + 6, y: node.y + 6 })}${brand ? `\n          ${brand}` : ''}
+          <text data-node-label=""${hasSub ? ' data-detail-anchor=""' : ''} x="${node.cx}" y="${node.y + 21}" class="t-primary" font-size="${labelFontSize}" font-weight="600" text-anchor="middle">${esc(node.label)}</text>${sub}${hitBadge}${confidenceTag}${eduTag}${tag}
         </g>`;
 }
+
+// Routing-hop role drives edge styling (B1): reject/defer are visually
+// demoted, branch is dashed, main keeps the default solid emphasis.
+const ROLE_EDGE_STYLE = {
+  main: { dash: null, opacity: '1' },
+  branch: { dash: '6 3', opacity: '0.9' },
+  defer: { dash: '2 3', opacity: '0.6' },
+  reject: { dash: '5 3', opacity: '0.45' },
+};
 
 function renderEdgePath(edge, index) {
   const [cls, marker] = arrowClassMap[edge.variant || 'default'] || arrowClassMap.default;
   const routed = pathFor(edge);
   const strokeWidth = edge.width || (edge.variant === 'emphasis' ? 1.8 : 1.4);
-  return `        <path ${focusEdgeAttrs(edge.from, edge.to, edge.label, index, edge.id)} data-composition-points="${routePointsValue(routed.points)}" d="${routed.d}" class="${cls}"${animateAttr(cognition.meta, 'edge', edgeSteps.get(edge))} stroke-width="${strokeWidth}" marker-end="url(#${marker})"/>`;
+  const role = ROLE_EDGE_STYLE[edge.role];
+  const dash = role ? ` stroke-dasharray="${role.dash}"` : '';
+  const opacity = role ? ` stroke-opacity="${role.opacity}"` : '';
+  return `        <path ${focusEdgeAttrs(edge.from, edge.to, edge.label, index, edge.id)} data-composition-points="${routePointsValue(routed.points)}" d="${routed.d}" class="${cls}"${animateAttr(cognition.meta, 'edge', edgeSteps.get(edge))} stroke-width="${strokeWidth}"${dash}${opacity} marker-end="url(#${marker})"/>`;
 }
 
 function renderEdgeLabel(edge, index) {
