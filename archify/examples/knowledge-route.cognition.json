@@ -4,6 +4,7 @@
   "meta": {
     "title": "Cognition Route: Triangle Interior Angles",
     "locale": "en",
+    "quality_profile": "showcase",
     "subtitle": "How a conditional-knowledge router answered one question",
     "question": "What is the sum of the interior angles of a triangle?",
     "verdict": "resolved",

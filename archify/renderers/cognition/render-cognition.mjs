@@ -63,11 +63,11 @@ const VERDICT_KINDS = ['accept', 'branch', 'defer', 'reject', 'blindspot'];
 const layout = {
   laneX: 40,
   laneY: 52,
-  laneW: 640,
+  laneW: 1000,
   laneH: 104,
   laneGap: 20,
   laneTitleH: 30,
-  colXs: [88, 220, 300, 430, 500, 625],
+  colXs: [88, 311, 446, 665, 783, 994],
   nodeW: 92,
   nodeH: 52
 };
@@ -76,7 +76,7 @@ const autoHeight = layout.laneY
   + (cognition.lanes?.length || 1) * layout.laneH
   + ((cognition.lanes?.length || 1) - 1) * layout.laneGap
   + 124;
-const viewBox = cognition.meta?.viewBox || [720, autoHeight];
+const viewBox = cognition.meta?.viewBox || [1080, autoHeight];
 
 const laneIndex = new Map(asArray(cognition.lanes).map((lane, index) => [lane.id, index]));
 const laneLabels = new Map(asArray(cognition.lanes).map((lane) => [lane.id, lane.label]));
