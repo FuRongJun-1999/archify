@@ -73,7 +73,7 @@ semantics.
 
 ---
 
-## 3. Nested subgraphs: the part-whole schema is recursive
+## 3. Nested subgraphs: a design direction, not a schema-v1 contract
 
 The source system's knowledge graph supports recursive nesting: a node may
 contain a `subgraph` (child nodes + internal edges), and children reference
@@ -83,16 +83,16 @@ of depth (person → head → face → eyes → iris/pupil/lash).
 **Why this matters for the `cognition` type:**
 reasoning routes are naturally recursive — a "main path" step may itself
 contain a sub-route (e.g., a verification procedure inside an acceptance
-step). The schema's `subgraph` field (child nodes + internal edges) models
-this without flattening. The renderer's `direction` parameter (`in`/`out`)
-preserves the hierarchical semantics: `in` = children pointing at parents
-(part_of), `out` = parents pointing at children (contains).
+step). Flattening such a route loses the part-whole semantics that keep the
+diagram legible as a reasoning trace.
 
-**Design commitment:** the schema should support recursive nesting to
-arbitrary depth. Flattening (serialising nested subgraphs into a single level)
-loses the part-whole semantics that make the diagram legible as a reasoning
-trace. The renderer may choose to visualise nesting via containers/lanes, but
-the IR must preserve the recursive structure.
+**Implementation status:** the schema-v1 `cognition` type does **not** model
+nesting. There is no `subgraph` field, no `part_of` edge type, and no renderer
+`direction` parameter — every level sets `additionalProperties: false`, so
+those fields are rejected rather than silently ignored. Recursive nesting
+remains a design direction for a future schema revision: the IR would need to
+preserve the part-whole structure instead of flattening it, and the renderer
+could visualise it via containers or lanes.
 
 ---
 
@@ -121,4 +121,4 @@ projection of a reasoning system's actual state.
 |---|---|---|
 | Unified time kernel | `aeis/time_core.py` (`cred()` family), `time_core_lint.py` | `node.confidence` → fill opacity mapping |
 | Negative routing | `rejected_paths` table, negative-condition index, `edge.role` | `edge.role` → dash/opacity mapping, `verdict: reject` styling |
-| Nested subgraphs | `store.subgraph(direction=)`, `subgraph_replace()`, 5-level roundtrip validation | `subgraph` field in schema, `direction` parameter |
+| Nested subgraphs | `store.subgraph(direction=)`, `subgraph_replace()`, 5-level roundtrip validation | not modelled in schema v1 — see principle 3 for the design direction |

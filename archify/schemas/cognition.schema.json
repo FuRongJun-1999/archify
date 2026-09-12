@@ -76,8 +76,7 @@
                 "branch": { "$ref": "common.schema.json#/$defs/legendEntry" },
                 "defer": { "$ref": "common.schema.json#/$defs/legendEntry" },
                 "reject": { "$ref": "common.schema.json#/$defs/legendEntry" },
-                "blindspot": { "$ref": "common.schema.json#/$defs/legendEntry" },
-                "external": { "$ref": "common.schema.json#/$defs/legendEntry" }
+                "blindspot": { "$ref": "common.schema.json#/$defs/legendEntry" }
               }
             }
           }

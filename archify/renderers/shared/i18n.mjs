@@ -61,7 +61,6 @@ const MESSAGE_PAIRS = {
   'legend.lifecycle.neutral': ['neutral', '中性状态'],
   'legend.lifecycle.external': ['external', '外部状态'],
 
-  'legend.cognition.subject': ['Question entry', '问题入口'],
   'legend.cognition.accept': ['Accepted card', '命中的知识卡'],
   'legend.cognition.branch': ['Lower-score branch', '低分分支'],
   'legend.cognition.defer': ['Condition not closed', '条件未闭合'],
